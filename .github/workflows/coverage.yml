@@ -1,0 +1,19 @@
+on: ['push', 'pull_request_target']
+
+name: Test Coveralls
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: oven-sh/setup-bun@v2.0.1
+      - name: install, make test-coverage
+        run: |
+          bun install
+          bun test --coverage
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
