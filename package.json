@@ -12,7 +12,7 @@
     "prerelease": "bun run verify",
     "prerelease:next": "bun run verify",
     "prebuild": "rimraf dist && mkdir dist",
-    "build": "rollup -c",
+    "build": "rollup -c && node scripts/inject-snippet.mjs",
     "release": "release --tag --push --patch --src=dist",
     "release:next": "release --tag --push --type=next --src=dist"
   },

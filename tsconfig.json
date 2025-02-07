@@ -7,7 +7,7 @@
     "sourceMap": true,
     "esModuleInterop": true,
     "inlineSourceMap": false,
-    "lib": ["esnext"],
+    "lib": ["esnext", "es2015", "dom"],
     "listEmittedFiles": false,
     "listFiles": false,
     "noFallthroughCasesInSwitch": true,
