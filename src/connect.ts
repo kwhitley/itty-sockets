@@ -65,7 +65,7 @@ export const connect = (id: string, options?: Record<string, any>): Connection =
             connect()
             return __
         },
-        push: (...args: any) => __.send(...args).close(),
+        push: (message: string, recipient?: string) => __.send(message, recipient).close(),
         listen: (listener: Listener) => {
           listeners.push(listener)
           connect()
