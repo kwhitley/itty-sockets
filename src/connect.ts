@@ -14,41 +14,44 @@ export const channel = (id: string, options?: Record<string, any>) => {
     listeners: Listener[] = [],
     closeAfterSend = 0
 
+  const connect = () => {
+    if (ws) return // Don't reconnect if already opening/open
+
+    ws = new WebSocket('wss://ittysockets.io/r/'+(id??'') + (options ? `?${new URLSearchParams(options).toString()}` : ''))
+
+    ws.onopen = () => {
+      // @ts-ignore
+      while (queue.length) ws?.send(queue.shift())
+      if (closeAfterSend) ws?.close()
+    }
+
+    ws.onmessage = (event: MessageEvent) => {
+      try {
+        let parsed = JSON.parse(event.data)
+        for (let listener of listeners) {
+          listener({ date: new Date(parsed.date), ...parsed })
+        }
+      } catch {}
+    }
+
+    ws.onclose = () => { 
+      closeAfterSend = 0
+      ws = null 
+    }
+  }
+
+  connect() // Connect immediately
+
   return new Proxy(() => {}, {
     get: (_, key, __) => {
-      const connect = () => {
-        if (ws) return __ // Don't reconnect if already opening/open
-    
-        ws = new WebSocket('wss://ittysockets.io/r/'+(id??'') + (options ? `?${new URLSearchParams(options).toString()}` : ''))
-    
-        ws.onopen = () => {
-          // @ts-ignore
-          while (queue.length) ws?.send(queue.shift())
-          if (closeAfterSend) ws?.close()
-        }
-    
-        ws.onmessage = (event: MessageEvent) => {
-          try {
-            let parsed = JSON.parse(event.data)
-            for (let listener of listeners) {
-              listener({ date: new Date(parsed.date), ...parsed })
-            }
-          } catch {}
-        }
-    
-        ws.onclose = () => { 
-          closeAfterSend = 0
-          ws = null 
-        }
-      }
+      if (key == 'ws') return ws
 
-      if (key == 'ws') return ws // expose the websocket instance directly
-      
       if (key == 'send') return (message: any) => {
         const payload = JSON.stringify(message)
         if (ws?.readyState == 1) return ws.send(payload) ?? __
         queue.push(payload)
-        return connect() ?? __
+        connect()
+        return __
       }
 
       if (key == 'push') 
@@ -57,7 +60,8 @@ export const channel = (id: string, options?: Record<string, any>) => {
       if (key === 'listen') 
         return (listener: Listener) => {
           listeners.push(listener)
-          return connect() ?? __
+          connect()
+          return __
         }
 
       if (key == 'close') 
@@ -65,3 +69,21 @@ export const channel = (id: string, options?: Record<string, any>) => {
     }
   })
 }
+
+/*
+proposed message syntax:
+
+{
+  uid: string,
+  as?: string,
+  date: Date,
+  message: any,
+}
+
+{
+  // no uid implies sytem message
+  date: Date,
+  message: any,
+}
+
+*/
