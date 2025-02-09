@@ -39,9 +39,9 @@ export const connect = (id: string, options?: Record<string, any>): Connection =
         listener({ ...parsed, date: new Date(parsed.date) })
     }
 
-    ws.onclose = () => { 
+    ws.onclose = () => {
       closeAfterSend = 0
-      ws = null 
+      ws = null
     }
   }
 
@@ -53,17 +53,16 @@ export const connect = (id: string, options?: Record<string, any>): Connection =
       // @ts-ignore
       return ({
         ws,
-        send: (message: any, recipient?: string) => {
-            let payload = recipient 
-            ? `@@${recipient}@@${JSON.stringify(message)}`
-            : JSON.stringify(message)
+        send: (
+          message: any,
+          recipient?: string,
+        ) => {
+          let payload = recipient ? `@@${recipient}@@${JSON.stringify(message)}` : JSON.stringify(message)
+          if (ws?.readyState == 1) return ws.send(payload) ?? __
 
-            if (ws?.readyState == 1) 
-              return ws.send(payload) ?? __
-            
-            queue.push(payload)
-            connect()
-            return __
+          queue.push(payload)
+          connect()
+          return __
         },
         push: (message: string, recipient?: string) => __.send(message, recipient).close(),
         listen: (listener: Listener) => {
