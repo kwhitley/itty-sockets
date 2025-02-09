@@ -50,7 +50,7 @@ Copy and paste this snippet directly into your browser console:
 
 <!-- BEGIN SNIPPET -->
 ```ts
-window.connect=(e,t)=>{let s,n=[],o=[],r=0;const a=()=>{s||(s=new WebSocket("wss://ittysockets.io/r/"+(e??"")+(t?`?${new URLSearchParams(t).toString()}`:"")),s.onopen=()=>{for(;n.length;)s?.send(n.shift());r&&s?.close()},s.onmessage=e=>{try{let t=JSON.parse(e.data);for(let e of o)e({date:new Date(t.date),...t})}catch{}},s.onclose=()=>{r=0,s=null})};return a(),new Proxy((()=>{}),{get:(e,t,c)=>"ws"==t?s:"send"==t?e=>{const t=JSON.stringify(e);return 1==s?.readyState?s.send(t)??c:(n.push(t),a(),c)}:"push"==t?e=>(r=1,c.send(e)):"listen"===t?e=>(o.push(e),a(),c):"close"==t?()=>(1==s?.readyState?s.close():r=1,c):void 0})};
+window.connect=(e,t)=>{let s,n=[],o=[],r=0;const a=()=>{s||(s=new WebSocket("ws://localhost:3000/r/"+(e??"")+(t?`?${new URLSearchParams(t).toString()}`:"")),s.onopen=()=>{for(;n.length;)s?.send(n.shift());r&&s?.close()},s.onmessage=(e,t=JSON.parse(e.data))=>{for(let e of o)e({...t,date:new Date(t.date)})},s.onclose=()=>{r=0,s=null})};return a(),new Proxy((()=>{}),{get:(e,t,l)=>({ws:s,send:(e,t)=>{let o=t?`@@${t}@@${JSON.stringify(e)}`:JSON.stringify(e);return 1==s?.readyState?s.send(o)??l:(n.push(o),a(),l)},push:(...e)=>l.send(...e).close(),listen:e=>(o.push(e),a(),l),close:()=>(1==s?.readyState?s.close():r=1,l)}[t])})};
 ```
 <!-- END SNIPPET -->
 

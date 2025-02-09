@@ -1,14 +1,23 @@
 type Message = {
-  // id: string
   date: Date
-  from: string
+  uid?: string
   alias?: string
   message: any
 }
 
 type Listener = (message: Message) => void
 
-export const channel = (id: string, options?: Record<string, any>) => {
+type SendMessage = (message: any, uid?: string) => void
+
+type Connection = {
+  ws: WebSocket,
+  send: SendMessage,
+  push: SendMessage,
+  listen: (listener: Listener) => void,
+  close: () => void,
+}
+
+export const connect = (id: string, options?: Record<string, any>): Connection => {
   let ws: WebSocket | null,
     queue: string[] = [],
     listeners: Listener[] = [],
@@ -17,7 +26,7 @@ export const channel = (id: string, options?: Record<string, any>) => {
   const connect = () => {
     if (ws) return // Don't reconnect if already opening/open
 
-    ws = new WebSocket('wss://ittysockets.io/r/'+(id??'') + (options ? `?${new URLSearchParams(options).toString()}` : ''))
+    ws = new WebSocket('ws://localhost:3000/r/'+(id??'') + (options ? `?${new URLSearchParams(options).toString()}` : ''))
 
     ws.onopen = () => {
       // @ts-ignore
@@ -25,13 +34,9 @@ export const channel = (id: string, options?: Record<string, any>) => {
       if (closeAfterSend) ws?.close()
     }
 
-    ws.onmessage = (event: MessageEvent) => {
-      try {
-        let parsed = JSON.parse(event.data)
-        for (let listener of listeners) {
-          listener({ date: new Date(parsed.date), ...parsed })
-        }
-      } catch {}
+    ws.onmessage = (event: MessageEvent, parsed = JSON.parse(event.data)) => {
+      for (let listener of listeners)
+        listener({ ...parsed, date: new Date(parsed.date) })
     }
 
     ws.onclose = () => { 
@@ -42,30 +47,32 @@ export const channel = (id: string, options?: Record<string, any>) => {
 
   connect() // Connect immediately
 
+  // @ts-ignore
   return new Proxy(() => {}, {
     get: (_, key, __) => {
-      if (key == 'ws') return ws
+      // @ts-ignore
+      return ({
+        ws,
+        send: (message: any, recipient?: string) => {
+            let payload = recipient 
+            ? `@@${recipient}@@${JSON.stringify(message)}`
+            : JSON.stringify(message)
 
-      if (key == 'send') return (message: any) => {
-        const payload = JSON.stringify(message)
-        if (ws?.readyState == 1) return ws.send(payload) ?? __
-        queue.push(payload)
-        connect()
-        return __
-      }
-
-      if (key == 'push') 
-        return (message: any) => (closeAfterSend = 1, __.send(message))
-
-      if (key === 'listen') 
-        return (listener: Listener) => {
+            if (ws?.readyState == 1) 
+              return ws.send(payload) ?? __
+            
+            queue.push(payload)
+            connect()
+            return __
+        },
+        push: (...args: any) => __.send(...args).close(),
+        listen: (listener: Listener) => {
           listeners.push(listener)
           connect()
           return __
-        }
-
-      if (key == 'close') 
-        return () => (ws?.readyState == 1 ? ws.close() : (closeAfterSend = 1), __)
+        },
+        close: () => (ws?.readyState == 1 ? ws.close() : (closeAfterSend = 1), __)
+      })[key]
     }
   })
 }
