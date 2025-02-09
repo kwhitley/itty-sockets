@@ -5,16 +5,16 @@ import copy from 'rollup-plugin-copy'
 
 export default [
   {
-    input: './src/getRoom.ts',
+    input: './src/connect.ts',
     output: [
       {
         format: 'esm',
-        file: './dist/getRoom.mjs',
+        file: './dist/connect.mjs',
         sourcemap: false,
       },
       {
         format: 'cjs',
-        file: './dist/getRoom.js',
+        file: './dist/connect.js',
         sourcemap: false,
       },
     ],
@@ -33,11 +33,11 @@ export default [
     ],
   },
   {
-    input: 'src/getRoom.ts',
+    input: 'src/connect.ts',
     output: {
-      file: 'dist/getRoom.snippet.js',
+      file: 'dist/connect.snippet.js',
       format: 'esm',
-      name: 'getRoom'
+      name: 'connect'
     },
     plugins: [
       typescript(),
