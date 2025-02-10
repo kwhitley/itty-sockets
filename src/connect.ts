@@ -5,17 +5,19 @@ type Message = {
   message: any
 }
 
-type Listener = (message: Message) => void
+type Listener = (message: Message) => any
 
-type SendMessage = (message: any, uid?: string) => void
+type SendMessage = (message: any, recipient?: string) => Connection
 
 type Connection = {
   ws: WebSocket,
   send: SendMessage,
   push: SendMessage,
-  listen: (listener: Listener) => void,
-  close: () => void,
+  listen: (listener: Listener) => Connection,
+  close: () => Connection,
 }
+
+type AllowedProperty = 'ws' | 'send' | 'push' | 'listen' | 'close'
 
 export const connect = (id: string, options?: Record<string, any>): Connection => {
   let ws: WebSocket | null,
@@ -23,10 +25,11 @@ export const connect = (id: string, options?: Record<string, any>): Connection =
     listeners: Listener[] = [],
     closeAfterSend = 0
 
-  const connect = () => {
+  let connect = () => {
     if (ws) return // Don't reconnect if already opening/open
 
-    ws = new WebSocket('ws://localhost:3000/r/'+(id??'') + (options ? `?${new URLSearchParams(options).toString()}` : ''))
+    // ws = new WebSocket('ws://localhost:3000/r/'+(id??'') + (options ? `?${new URLSearchParams(options).toString()}` : ''))
+    ws = new WebSocket(`ws://localhost:3000/r/${id??''}${options?`?${new URLSearchParams(options)}`:''}`)
 
     ws.onopen = () => {
       // @ts-ignore
@@ -34,37 +37,37 @@ export const connect = (id: string, options?: Record<string, any>): Connection =
       if (closeAfterSend) ws?.close()
     }
 
-    ws.onmessage = (event: MessageEvent, parsed = JSON.parse(event.data)) => {
+    ws.onmessage = (
+      event: MessageEvent,
+      parsed = JSON.parse(event.data),
+    ) => {
       for (let listener of listeners)
         listener({ ...parsed, date: new Date(parsed.date) })
     }
 
-    ws.onclose = () => {
-      closeAfterSend = 0
-      ws = null
-    }
+    ws.onclose = () => (closeAfterSend = 0, ws = null)
   }
 
-  connect() // Connect immediately
+  // connect() // Connect immediately
 
   // @ts-ignore
-  return new Proxy(() => {}, {
-    get: (_, key, __) => {
-      // @ts-ignore
-      return ({
+  return new Proxy(connect, {
+    get: (_, key: AllowedProperty, __) =>
+      ({
         ws,
         send: (
           message: any,
           recipient?: string,
         ) => {
-          let payload = recipient ? `@@${recipient}@@${JSON.stringify(message)}` : JSON.stringify(message)
-          if (ws?.readyState == 1) return ws.send(payload) ?? __
+          message = JSON.stringify(message)
+          message = recipient ? `@@${recipient}@@${message}` : message
+          if (ws?.readyState == 1) return ws.send(message) ?? __
 
-          queue.push(payload)
+          queue.push(message)
           connect()
           return __
         },
-        push: (message: string, recipient?: string) => __.send(message, recipient).close(),
+        push: (message: any, recipient?: string) => __.send(message, recipient).close(),
         listen: (listener: Listener) => {
           listeners.push(listener)
           connect()
@@ -72,9 +75,11 @@ export const connect = (id: string, options?: Record<string, any>): Connection =
         },
         close: () => (ws?.readyState == 1 ? ws.close() : (closeAfterSend = 1), __)
       })[key]
-    }
   })
 }
+
+// const foo = connect('foo')
+// foo.send('hello').listen(msg => console.log(msg))
 
 /*
 proposed message syntax:
