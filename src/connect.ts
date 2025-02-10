@@ -10,7 +10,7 @@ type Listener = (message: Message) => any
 type SendMessage = (message: any, recipient?: string) => Connection
 
 type Connection = {
-  ws: WebSocket,
+  ws?: WebSocket,
   send: SendMessage,
   push: SendMessage,
   listen: (listener: Listener) => Connection,
@@ -19,7 +19,7 @@ type Connection = {
 
 type AllowedProperty = 'ws' | 'send' | 'push' | 'listen' | 'close'
 
-export const connect = (id: string, options?: Record<string, any>): Connection => {
+export const connect = (id: string, options: Record<string, any> = {}): Connection => {
   let ws: WebSocket | null,
     queue: string[] = [],
     listeners: Listener[] = [],
@@ -28,8 +28,7 @@ export const connect = (id: string, options?: Record<string, any>): Connection =
   let connect = () => {
     if (ws) return // Don't reconnect if already opening/open
 
-    // ws = new WebSocket('ws://localhost:3000/r/'+(id??'') + (options ? `?${new URLSearchParams(options).toString()}` : ''))
-    ws = new WebSocket(`ws://localhost:3000/r/${id??''}${options?`?${new URLSearchParams(options)}`:''}`)
+    ws = new WebSocket(`wss://ittysockets.io/r/${id??''}?${new URLSearchParams(options)}`)
 
     ws.onopen = () => {
       // @ts-ignore
@@ -48,8 +47,6 @@ export const connect = (id: string, options?: Record<string, any>): Connection =
     ws.onclose = () => (closeAfterSend = 0, ws = null)
   }
 
-  // connect() // Connect immediately
-
   // @ts-ignore
   return new Proxy(connect, {
     get: (_, key: AllowedProperty, __) =>
@@ -62,39 +59,17 @@ export const connect = (id: string, options?: Record<string, any>): Connection =
           message = JSON.stringify(message)
           message = recipient ? `@@${recipient}@@${message}` : message
           if (ws?.readyState == 1) return ws.send(message) ?? __
-
           queue.push(message)
-          connect()
-          return __
+
+          return connect() ?? __
         },
         push: (message: any, recipient?: string) => __.send(message, recipient).close(),
         listen: (listener: Listener) => {
           listeners.push(listener)
-          connect()
-          return __
+
+          return connect() ?? __
         },
         close: () => (ws?.readyState == 1 ? ws.close() : (closeAfterSend = 1), __)
       })[key]
   })
 }
-
-// const foo = connect('foo')
-// foo.send('hello').listen(msg => console.log(msg))
-
-/*
-proposed message syntax:
-
-{
-  uid: string,
-  as?: string,
-  date: Date,
-  message: any,
-}
-
-{
-  // no uid implies sytem message
-  date: Date,
-  message: any,
-}
-
-*/
