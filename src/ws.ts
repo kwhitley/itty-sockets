@@ -1,21 +1,27 @@
-import { Predicate, AllowedProperty } from './types'
 
-type Listener = (message: any) => any
+type AllowedProperty = 'ws' | 'send' | 'push' | 'listen' | 'close'
 
-type SendMessage = (message: any) => Connection
+type SendMessage = <MessageFormat = any>(message: MessageFormat) => Connection
 
 type Connection = {
-  ws?: WebSocket | null,
+  ws?: WebSocket | undefined,
   send: SendMessage,
   push: SendMessage,
-  listen: (listener: Listener) => Connection,
+  listen: <MessageType = any>(
+    listener: (message: MessageType) => any,
+    when?: (message: MessageType) => any,
+  ) => Connection,
   close: () => Connection,
 }
 
-export const ws = (url: string, options: Record<string, any> = {}): Connection => {
+type ConnectionOptions = {
+  json?: boolean,
+}
+
+export const ws = (url: string, options: ConnectionOptions = {}): Connection => {
   let ws: WebSocket | undefined,
     queue: string[] = [],
-    listeners: Listener[] = [],
+    listeners: Array<(message: any) => any> = [],
     closeAfterSend = 0
 
   let connect = () => {
@@ -47,14 +53,13 @@ export const ws = (url: string, options: Record<string, any> = {}): Connection =
           message = options.json ? JSON.stringify(message) : message
           if (ws?.readyState == 1) return ws.send(message) ?? __
           queue.push(message)
-
           return connect() ?? __
         },
         push: (message: any) => {
           closeAfterSend = 1
           return __.send(message)
         },
-        listen: (listener: Listener, when?: Predicate) => {
+        listen: <T = any>(listener: (message: T) => any, when?: (message: T) => any) => {
           listeners.push(msg => (when && when(msg) || true) && listener(msg))
           return connect() ?? __
         },
@@ -63,3 +68,22 @@ export const ws = (url: string, options: Record<string, any> = {}): Connection =
       })[key]
   })
 }
+
+// type CustomMessage = {
+//   foo: string,
+//   age: number,
+// }
+
+// type XYMessage = {
+//   x: number,
+//   y: number,
+// }
+
+// const checker = (message: XYMessage) => message.age === 1
+
+// ws('wss://localhost:8080', { json: true })
+//   .listen<CustomMessage>(message => {
+//     console.log(message.foo)
+//   }, checker)
+//   .send<{ x: number }>({ foo: 'bar' })
+//   .push<{ x: number }>({ foo: 'bar' })

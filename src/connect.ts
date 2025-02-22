@@ -1,33 +1,29 @@
-// type Message = {
-//   date: Date
-//   uid?: string
-//   alias?: string
-//   message: any
-// }
+export type AllowedProperty = 'ws' | 'send' | 'push' | 'listen' | 'close'
 
-// type Listener = (message: Message) => any
+export type MessageEvent<MessageType = any> = {
+  date: Date
+  uid?: string
+  alias?: string
+  message: MessageType
+}
 
-// type SendMessage = (message: any, recipient?: string) => Connection
+export type SendMessage = <MessageFormat = any>(message: MessageFormat, recipient?: string) => Connection
 
-// type Connection = {
-//   ws?: WebSocket,
-//   send: SendMessage,
-//   push: SendMessage,
-//   listen: (listener: Listener) => Connection,
-//   close: () => Connection,
-// }
-
-// type AllowedProperty = 'ws' | 'send' | 'push' | 'listen' | 'close'
-
-type Predicate = (msg: Message) => boolean | undefined | number
-type MessageHandler = (msg: Message) => any
-
-import type { Message, Listener, SendMessage, Connection, AllowedProperty } from './types'
+export type Connection = {
+  ws?: WebSocket,
+  send: SendMessage,
+  push: SendMessage,
+  listen: <MessageType = any>(
+    listener: (event: MessageEvent<MessageType>) => any,
+    when?: (event: MessageEvent<MessageType>) => any,
+  ) => Connection,
+  close: () => Connection,
+}
 
 export const connect = (id: string, options: Record<string, any> = {}): Connection => {
   let ws: WebSocket | null,
     queue: string[] = [],
-    listeners: Listener[] = [],
+    listeners: Array<(event: MessageEvent) => any> = [],
     closeAfterSend = 0
 
   let connect = () => {
@@ -41,7 +37,7 @@ export const connect = (id: string, options: Record<string, any> = {}): Connecti
     }
 
     ws.onmessage = (
-      event: MessageEvent,
+      event: any,
       parsed = JSON.parse(event.data),
     ) => {
       for (let listener of listeners)
@@ -56,10 +52,7 @@ export const connect = (id: string, options: Record<string, any> = {}): Connecti
     get: (_, key: AllowedProperty, __) =>
       ({
         ws,
-        send: (
-          message: any,
-          recipient?: string,
-        ) => {
+        send: (message: any, recipient?: string) => {
           message = JSON.stringify(message)
           message = recipient ? `@@${recipient}@@${message}` : message
           if (ws?.readyState == 1) return ws.send(message) ?? __
@@ -71,11 +64,37 @@ export const connect = (id: string, options: Record<string, any> = {}): Connecti
           closeAfterSend = 1
           return __.send(message, recipient)
         },
-        listen: (listener: Listener, when?: Predicate) => {
-          listeners.push((msg: Message) => (when && when(msg) || true) && listener(msg))
+        listen: <MessageType = any>(
+          listener: (event: MessageEvent<MessageType>) => any,
+          when?: (event: MessageEvent<MessageType>) => boolean
+        ) => {
+          listeners.push((event: MessageEvent<any>) =>
+            (when && when(event as MessageEvent<MessageType>) || true) &&
+            listener(event as MessageEvent<MessageType>)
+          )
           return connect() ?? __
         },
         close: () => (ws?.readyState == 1 ? ws.close() : (closeAfterSend = 1), __)
       })[key]
   })
 }
+
+// type FooMessage = {
+//   name: string
+//   age: number
+//   pets: string[]
+// }
+// type XYMessage = {
+//   x: number
+//   y: number
+// }
+
+// connect('test')
+//   .listen<FooMessage>(({ message }) => {
+//     console.log(message.name)
+//   }, (msg) => msg.message.name)
+//   .listen<XYMessage>(({ message }) => {
+//     console.log(message.x, message.y)
+//   }, (msg) => msg.message.x !== undefined)
+//   .listen<{ x: number }>(e => e.message.foo == 'bar')
+//   .push<{ x: number }>({ foo: 'bar' })
