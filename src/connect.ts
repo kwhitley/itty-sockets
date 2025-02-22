@@ -1,23 +1,28 @@
-type Message = {
-  date: Date
-  uid?: string
-  alias?: string
-  message: any
-}
+// type Message = {
+//   date: Date
+//   uid?: string
+//   alias?: string
+//   message: any
+// }
 
-type Listener = (message: Message) => any
+// type Listener = (message: Message) => any
 
-type SendMessage = (message: any, recipient?: string) => Connection
+// type SendMessage = (message: any, recipient?: string) => Connection
 
-type Connection = {
-  ws?: WebSocket,
-  send: SendMessage,
-  push: SendMessage,
-  listen: (listener: Listener) => Connection,
-  close: () => Connection,
-}
+// type Connection = {
+//   ws?: WebSocket,
+//   send: SendMessage,
+//   push: SendMessage,
+//   listen: (listener: Listener) => Connection,
+//   close: () => Connection,
+// }
 
-type AllowedProperty = 'ws' | 'send' | 'push' | 'listen' | 'close'
+// type AllowedProperty = 'ws' | 'send' | 'push' | 'listen' | 'close'
+
+type Predicate = (msg: Message) => boolean | undefined | number
+type MessageHandler = (msg: Message) => any
+
+import type { Message, Listener, SendMessage, Connection, AllowedProperty } from './types'
 
 export const connect = (id: string, options: Record<string, any> = {}): Connection => {
   let ws: WebSocket | null,
@@ -31,8 +36,7 @@ export const connect = (id: string, options: Record<string, any> = {}): Connecti
     ws = new WebSocket(`wss://ittysockets.io/r/${id??''}?${new URLSearchParams(options)}`)
 
     ws.onopen = () => {
-      // @ts-ignore
-      while (queue.length) ws?.send(queue.shift())
+      while (queue.length) ws?.send(queue.shift()!)
       if (closeAfterSend) ws?.close()
     }
 
@@ -63,10 +67,12 @@ export const connect = (id: string, options: Record<string, any> = {}): Connecti
 
           return connect() ?? __
         },
-        push: (message: any, recipient?: string) => __.send(message, recipient).close(),
-        listen: (listener: Listener) => {
-          listeners.push(listener)
-
+        push: (message: any, recipient?: string) => {
+          closeAfterSend = 1
+          return __.send(message, recipient)
+        },
+        listen: (listener: Listener, when?: Predicate) => {
+          listeners.push((msg: Message) => (when && when(msg) || true) && listener(msg))
           return connect() ?? __
         },
         close: () => (ws?.readyState == 1 ? ws.close() : (closeAfterSend = 1), __)

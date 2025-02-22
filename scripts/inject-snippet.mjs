@@ -1,7 +1,7 @@
 import fs from 'fs'
 
 const transformCode = code => code
-  .replace(/^const\s+(\w+)\s*=/, 'window.connect=')
+  .replace(/^const\s+(\w+)\s*=/, 'let connect=')
   .replace(/;export\s*{[^}]+};?\s*$/, ';')
 
 const snippet = fs.readFileSync('dist/connect.snippet.js', 'utf-8')
@@ -16,4 +16,4 @@ const newReadme = readme.replace(
   `$1${transformed}$2`
 )
 
-fs.writeFileSync('README.md', newReadme) 
+fs.writeFileSync('README.md', newReadme)

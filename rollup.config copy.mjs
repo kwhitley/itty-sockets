@@ -7,7 +7,7 @@ import copy from 'rollup-plugin-copy'
 
 // scan files to build
 const files = (await globby('./src/*.ts', {
-  ignore: ['**/*.spec.ts', '**/types.ts'],
+  ignore: ['**/*.spec.ts'],
 })).map(path => ({
   path,
   shortPath: path.replace(/(\/src)|(\.ts)/g, '').replace('./index', '.'),
@@ -37,46 +37,32 @@ export default async () => {
   console.log(files.map(f => f.path))
 
   // export base files
-  return [
-    ...files.map(file => ({
-      input: file.path,
-      output: [
-        {
-          format: 'esm',
-          file: file.esm,
-          sourcemap: false,
-        },
-        {
-          format: 'cjs',
-          file: file.cjs,
-          sourcemap: false,
-        },
-      ],
-      plugins: [
-        typescript({ sourceMap: false }),
-        terser(),
-        bundleSize(),
-        copy({
-          targets: [
-            {
-              src: ['LICENSE'],
-              dest: 'dist',
-            },
-          ],
-        }),
-      ],
-    })),
-    {
-      input: 'src/connect.ts',
-      output: {
-        file: 'dist/connect.snippet.js',
+  return files.map(file => ({
+    input: file.path,
+    output: [
+      {
         format: 'esm',
-        name: 'connect',
+        file: file.esm,
+        sourcemap: false,
       },
-      plugins: [
-        typescript(),
-        terser(),
-      ],
-    },
-  ]
+      {
+        format: 'cjs',
+        file: file.cjs,
+        sourcemap: false,
+      },
+    ],
+    plugins: [
+      typescript({ sourceMap: false }),
+      terser(),
+      bundleSize(),
+      copy({
+        targets: [
+          {
+            src: ['LICENSE'],
+            dest: 'dist',
+          },
+        ],
+      }),
+    ],
+  }))
 }

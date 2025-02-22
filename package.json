@@ -45,5 +45,20 @@
     "rollup-plugin-copy": "^3.5.0",
     "typescript": "^5.7.2",
     "yarn-release": "^1.10.6"
+  },
+  "dependencies": {
+    "globby": "^14.1.0"
+  },
+  "exports": {
+    "./connect": {
+      "import": "./connect.mjs",
+      "require": "./connect.js",
+      "types": "./connect.d.ts"
+    },
+    "./ws": {
+      "import": "./ws.mjs",
+      "require": "./ws.js",
+      "types": "./ws.d.ts"
+    }
   }
 }
