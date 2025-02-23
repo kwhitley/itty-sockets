@@ -3,8 +3,8 @@ type AllowedProperty = 'ws' | 'send' | 'push' | 'listen' | 'close'
 
 type SendMessage = <MessageFormat = any>(message: MessageFormat) => Connection
 
-type Connection = {
-  ws?: WebSocket | undefined,
+export type Connection = {
+  ws?: WebSocket | null,
   send: SendMessage,
   push: SendMessage,
   listen: <MessageType = any>(
@@ -14,12 +14,12 @@ type Connection = {
   close: () => Connection,
 }
 
-type ConnectionOptions = {
+export type ConnectionOptions = {
   json?: boolean,
 }
 
 export const ws = (url: string, options: ConnectionOptions = {}): Connection => {
-  let ws: WebSocket | undefined,
+  let ws: WebSocket | null,
     queue: string[] = [],
     listeners: Array<(message: any) => any> = [],
     closeAfterSend = 0
@@ -41,7 +41,7 @@ export const ws = (url: string, options: ConnectionOptions = {}): Connection => 
         listener(message)
     }
 
-    ws.onclose = () => (closeAfterSend = 0, ws = undefined)
+    ws.onclose = () => (closeAfterSend = 0, ws = null)
   }
 
   // @ts-ignore
@@ -60,7 +60,7 @@ export const ws = (url: string, options: ConnectionOptions = {}): Connection => 
           return __.send(message)
         },
         listen: <T = any>(listener: (message: T) => any, when?: (message: T) => any) => {
-          listeners.push(msg => (when && when(msg) || true) && listener(msg))
+          listeners.push(msg => (!when || when(msg)) && listener(msg))
           return connect() ?? __
         },
         // @ts-ignore

@@ -1,1 +1,0 @@
-export type AllowedProperty = 'ws' | 'send' | 'push' | 'listen' | 'close'

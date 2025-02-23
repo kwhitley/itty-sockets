@@ -69,8 +69,7 @@ export const connect = (id: string, options: Record<string, any> = {}): Connecti
           when?: (event: MessageEvent<MessageType>) => boolean
         ) => {
           listeners.push((event: MessageEvent<any>) =>
-            (when && when(event as MessageEvent<MessageType>) || true) &&
-            listener(event as MessageEvent<MessageType>)
+            (!when || when(event as MessageEvent<MessageType>)) && listener(event as MessageEvent<MessageType>)
           )
           return connect() ?? __
         },
