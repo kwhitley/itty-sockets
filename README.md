@@ -114,10 +114,12 @@ connect('foo').push('hello world!')
 | **echo** | Whether to echo messages back to the sender | `false` | `{ echo: true }` |
 
 
-## Message Format
+## MessageEvent Format
 ```ts
-type Message = {
+type MessageEvent = {
   id: string      // unique message ID
+  uid: string     // unique user ID
+  alias: string?  // optional display name
   date: Date      // JavaScript Date object
   message: any    // the message payload
 }

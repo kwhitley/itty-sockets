@@ -7,20 +7,26 @@ export type MessageEvent<MessageType = any> = {
   message: MessageType
 }
 
-export type SendMessage = <MessageFormat = any>(message: MessageFormat, recipient?: string) => Connection
+export type SendMessage = <MessageFormat = any>(message: MessageFormat, recipient?: string) => IttySocket
 
-export type Connection = {
+export type IttySocket = {
   ws?: WebSocket,
   send: SendMessage,
   push: SendMessage,
   listen: <MessageType = any>(
     listener: (event: MessageEvent<MessageType>) => any,
     when?: (event: MessageEvent<MessageType>) => any,
-  ) => Connection,
-  close: () => Connection,
+  ) => IttySocket,
+  close: () => IttySocket,
 }
 
-export const connect = (id: string, options: Record<string, any> = {}): Connection => {
+export type IttySocketOptions = {
+  as?: string,
+  alias?: string,
+  echo?: boolean,
+}
+
+export const connect = (id: string, options: IttySocketOptions = {}): IttySocket => {
   let ws: WebSocket | null,
     queue: string[] = [],
     listeners: Array<(event: MessageEvent) => any> = [],
@@ -29,6 +35,7 @@ export const connect = (id: string, options: Record<string, any> = {}): Connecti
   let connect = () => {
     if (ws) return // Don't reconnect if already opening/open
 
+    // @ts-ignore - options will be cast as string regardless of what is passed
     ws = new WebSocket(`wss://ittysockets.io/r/${id??''}?${new URLSearchParams(options)}`)
 
     ws.onopen = () => {
@@ -87,6 +94,10 @@ export const connect = (id: string, options: Record<string, any> = {}): Connecti
 //   x: number
 //   y: number
 // }
+
+// connect('test', {
+//   as: 'test-user',
+// })
 
 // connect('test')
 //   .listen<FooMessage>(({ message }) => {

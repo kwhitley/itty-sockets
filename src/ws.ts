@@ -1,24 +1,24 @@
 
 type AllowedProperty = 'ws' | 'send' | 'push' | 'listen' | 'close'
 
-type SendMessage = <MessageFormat = any>(message: MessageFormat) => Connection
+type SendMessage = <MessageFormat = any>(message: MessageFormat) => WSConnection
 
-export type Connection = {
+export type WSConnection = {
   ws?: WebSocket | null,
   send: SendMessage,
   push: SendMessage,
   listen: <MessageType = any>(
     listener: (message: MessageType) => any,
     when?: (message: MessageType) => any,
-  ) => Connection,
-  close: () => Connection,
+  ) => WSConnection,
+  close: () => WSConnection,
 }
 
-export type ConnectionOptions = {
+export type WSConnectionOptions = {
   json?: boolean,
 }
 
-export const ws = (url: string, options: ConnectionOptions = {}): Connection => {
+export const ws = (url: string, options: WSConnectionOptions = {}): WSConnection => {
   let ws: WebSocket | null,
     queue: string[] = [],
     listeners: Array<(message: any) => any> = [],

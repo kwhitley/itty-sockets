@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'bun:test'
-import { ws, type Connection, type ConnectionOptions } from './ws'
+import { ws, type WSConnectionOptions } from './ws'
+
+const MAX_TIMEOUT = 250
 
 describe('ws', () => {
   const getURL = (id: string) =>
     `wss://ittysockets.io/r/itty:itty-sockets:test-${id}?echo=true`
 
-  const setup = (options: ConnectionOptions = {}) => {
+  const setup = (options: WSConnectionOptions = {}) => {
     const id = Math.random().toString(36).slice(2)
     return ws(getURL(id), options)
   }
@@ -37,13 +39,14 @@ describe('ws', () => {
           name: 'exposes raw websocket after connection',
           run: () => new Promise<void>((resolve, reject) => {
             const conn = setup()
-            const timeout = setTimeout(() => reject(new Error('Connection timeout')), 150)
+            const timeout = setTimeout(() => reject(new Error('Connection timeout')), MAX_TIMEOUT)
 
             conn.listen(() => {
               clearTimeout(timeout)
               expect(conn.ws instanceof WebSocket).toBe(true)
               expect(typeof conn.ws?.send).toBe('function')
               expect(typeof conn.ws?.close).toBe('function')
+              conn.close()
               resolve()
             })
 
@@ -58,6 +61,7 @@ describe('ws', () => {
               .listen((e) => {
                 if (e.message === 'end') {
                   expect(e.message).toBe('end')
+                  conn.close()
                 }
               })
               .send('start')
@@ -77,11 +81,12 @@ describe('ws', () => {
           name: 'notifies listeners',
           run: () => new Promise<void>((resolve, reject) => {
             const conn = setup({ json: true })
-            const timeout = setTimeout(() => reject(new Error('No message received')), 150)
+            const timeout = setTimeout(() => reject(new Error('No message received')), MAX_TIMEOUT)
 
             conn.listen(e => {
               clearTimeout(timeout)
               expect(e.message).toBe('test-message')
+              conn.close()
               resolve()
             })
 
@@ -93,11 +98,12 @@ describe('ws', () => {
           run: () => new Promise<void>((resolve, reject) => {
             const conn = ws(getURL(Math.random().toString(36).slice(2)), { json: true })
             const data = { hello: 'world' }
-            const timeout = setTimeout(() => reject(new Error('No message received')), 150)
+            const timeout = setTimeout(() => reject(new Error('No message received')), MAX_TIMEOUT)
 
             conn.listen(e => {
               clearTimeout(timeout)
               expect(e.message).toEqual(data)
+              conn.close()
               resolve()
             })
 
@@ -118,11 +124,12 @@ describe('ws', () => {
             const message = 'push-test'
 
             return new Promise<void>((resolve, reject) => {
-              const timeout = setTimeout(() => reject(new Error('Push timeout')), 150)
+              const timeout = setTimeout(() => reject(new Error('Push timeout')), MAX_TIMEOUT)
 
               receiver.listen(e => {
                 clearTimeout(timeout)
                 expect(e.message).toBe(message)
+                receiver.close()
 
                 setTimeout(() => {
                   expect(sender.ws).toBeNull()

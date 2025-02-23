@@ -1,5 +1,7 @@
 import { describe, expect, it, beforeEach, afterEach } from 'bun:test'
-import { connect, MessageEvent, type Connection } from './connect'
+import { connect, MessageEvent, type IttySocket } from './connect'
+
+const MAX_TIMEOUT = 250
 
 describe('connect', () => {
   const getChannelID = () => 'itty:itty-sockets:test-' + Math.random().toString(36).slice(2)
@@ -11,7 +13,7 @@ describe('connect', () => {
       cases: [
         {
           name: 'exposes .send, .push, .listen, .close',
-          run: (channel: Connection) => {
+          run: (channel: IttySocket) => {
             for (const method of ['send', 'push', 'listen', 'close']) {
               expect(typeof channel[method]).toBe('function')
             }
@@ -29,6 +31,7 @@ describe('connect', () => {
 
             channel.listen(msg => {
               expect(msg.message).toBe('test')
+              channel.close()
               resolve()
             })
             channel.send('test')
@@ -38,11 +41,12 @@ describe('connect', () => {
           name: 'as > sets alias for messages',
           run: () => new Promise<void>((resolve, reject) => {
             const channel = connect(getChannelID(), { echo: true, as: 'test-user' })
-            const timeout = setTimeout(() => reject(new Error('No message received')), 150)
+            const timeout = setTimeout(() => reject(new Error('No message received')), MAX_TIMEOUT)
 
             channel.listen(msg => {
               clearTimeout(timeout)
               expect(msg.alias).toBe('test-user')
+              channel.close()
               resolve()
             })
             channel.send('test')
@@ -57,13 +61,14 @@ describe('connect', () => {
           name: 'MessageEvent > includes expected fields',
           run: () => new Promise<void>((resolve, reject) => {
             const channel = setup()
-            const timeout = setTimeout(() => reject(new Error('No message received')), 150)
+            const timeout = setTimeout(() => reject(new Error('No message received')), MAX_TIMEOUT)
 
             channel.listen(msg => {
               clearTimeout(timeout)
               expect(msg.date instanceof Date).toBe(true)
               expect(typeof msg.uid).toBe('string')
               expect(msg.message).toBe('test')
+              channel.close()
               resolve()
             })
             channel.send('test')
@@ -74,13 +79,14 @@ describe('connect', () => {
           run: () => new Promise<void>((resolve, reject) => {
             const channel = setup()
             let receivedCount = 0
-            const timeout = setTimeout(() => reject(new Error('Test timeout')), 150)
+            const timeout = setTimeout(() => reject(new Error('Test timeout')), MAX_TIMEOUT)
 
             channel.listen(
               msg => {
                 receivedCount++
                 if (receivedCount === 1) {
                   clearTimeout(timeout)
+                  channel.close()
                   resolve()
                 }
               },
@@ -93,7 +99,7 @@ describe('connect', () => {
         },
         {
           name: 'when predicate blocks messages',
-          run: (channel: Connection) => new Promise<void>((resolve) => {
+          run: (channel: IttySocket) => new Promise<void>((resolve) => {
             let called = false
             channel
               .listen(
@@ -104,13 +110,14 @@ describe('connect', () => {
 
             setTimeout(() => {
               expect(called).toBe(false)
+              channel.close()
               resolve()
             }, 100)
           })
         },
         {
           name: 'sends private messages to recipient',
-          run: (channel: Connection) => new Promise<void>((resolve, reject) => {
+          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
             const recipient = 'user-' + Math.random().toString(36).slice(2)
             const message = 'private-message'
 
@@ -118,6 +125,7 @@ describe('connect', () => {
               .listen(e => {
                 expect(e.uid).toBeUndefined()
                 expect(e.message).toContain(recipient)
+                channel.close()
                 resolve()
               })
               .send(message, recipient)
@@ -125,7 +133,7 @@ describe('connect', () => {
         },
         {
           name: 'handles multiple listeners for same message',
-          run: (channel: Connection) => new Promise<void>((resolve) => {
+          run: (channel: IttySocket) => new Promise<void>((resolve) => {
             let count = 0
             const listener1 = () => count++
             const listener2 = () => count++
@@ -137,6 +145,7 @@ describe('connect', () => {
 
             setTimeout(() => {
               expect(count).toBe(2)
+              channel.close()
               resolve()
             }, 100)
           })
@@ -148,17 +157,17 @@ describe('connect', () => {
       cases: [
         {
           name: 'processes queued messages in order',
-          run: () => new Promise<void>((resolve, reject) => {
-            const channel = setup()
+          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
             const messages = ['first', 'second', 'third']
             const received: any[] = []
-            const timeout = setTimeout(() => reject(new Error('Queue timeout')), 150)
+            const timeout = setTimeout(() => reject(new Error('Queue timeout')), MAX_TIMEOUT)
 
             channel.listen(msg => {
               received.push(msg.message)
               if (received.length === messages.length) {
                 clearTimeout(timeout)
                 expect(received).toEqual(messages)
+                channel.close()
                 resolve()
               }
             })
@@ -180,7 +189,7 @@ describe('connect', () => {
             const message = 'push-test'
 
             return new Promise<void>((resolve, reject) => {
-              const timeout = setTimeout(() => reject(new Error('Push timeout')), 150)
+              const timeout = setTimeout(() => reject(new Error('Push timeout')), MAX_TIMEOUT)
 
               receiver.listen(msg => {
                 clearTimeout(timeout)
@@ -188,6 +197,7 @@ describe('connect', () => {
 
                 setTimeout(() => {
                   expect(channel.ws).toBeNull()
+                  receiver.close()
                   resolve()
                 }, 50)
               })
