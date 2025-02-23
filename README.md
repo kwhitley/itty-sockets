@@ -2,7 +2,7 @@
 
 <p>
 <a href="https://itty.dev/itty-sockets" target="_blank">
-  <img src="https://github.com/user-attachments/assets/cfe915d5-63ce-4297-83ef-316426c7af57" alt="itty-sockets" height="120" />
+  <img src="https://github.com/user-attachments/assets/651753c6-6a99-479b-8d5a-ac2aadc16e72" alt="itty-sockets" height="120" />
 </a>
 </p>
 
@@ -18,12 +18,12 @@
 
 Tiny messaging client in under 400 bytes.  No backend needed.
 
-## Example
+## Example (using ittysockets.io public channels)
 ```ts
-import { connect } from 'itty-sockets'
+import { connect } from 'itty-sockets' // ~400 bytes
 
 // create a channel instance
-const foo = connect('foo')
+const foo = connect('foo', { echo: true }) // echo messages back to sender
 
 // listen for messages
 foo.listen(e => {
@@ -31,40 +31,50 @@ foo.listen(e => {
 })
 
 // send some messages
-room
+foo
   .send('hello world!')
   .send([1,2,3]) // no need to stringify
   .send({ foo: 'bar' })
 
 // or connect, send, and close - all in one call
-room.push('this will send and close the connection')
+foo.push('this will open, send, and close the connection')
+```
+
+## Example (other WebSocket servers)
+```ts
+import { ws } from 'itty-sockets' // ~340 bytes
+
+const foo = ws('wss://example.com', { json: true })
+
+foo
+  .listen(console.log) // this will auto-parse JSON messages from the server
+  .send('hello world!')
+  .send([1,2,3])
+  .send({ foo: 'bar' })
 ```
 
 ## Features
 
-- Simple and powerful API for sending and receiving messages & data
-- Streamlines async race conditions
-- No backend service needed.  Ours is fast and stores/logs nothing at all
-- Ultra-tiny. It's an itty library, after all
-- Full TypeScript support (when imported)
+- Simple and powerful API for sending and receiving messages & data.
+- Prevents WebSocket race conditions.
+- No backend service needed.  Ours is fast and private.
+- Full TypeScript support, including custom types for messages.
+- Ultra-tiny. It's an itty library, after all.
 
 ## What is itty-sockets?
 
 `itty-sockets` is a tiny messaging client that simplifies data/message transmission between users/connections.
 It's powered by [ittysockets.io](https://ittysockets.io), a free, fast, and private public service.  The idea is simple:
 
-1. Connect to a channel using a unique name (you choose it)
-2. Send messages to the channel (from one or more parties)
-3. Listen for messages in the channel (from one or more parties)
-4. Profit.
+1. Connect to a channel by name (creates a new channel if it doesn't exist).
+2. Send/receive messages in the channel.
+3. That's it!
 
 This is an easy way to transmit messages between clients, but comes with limitations and considerations:
 
 1. **There is no history/replay.**  It's a live stream.
 2. **We don't authenticate.**  Itty Sockets leverages security merely through obfuscation (a near-infinite number of channel names).  Use a secure channel name and/or encode your payloads if concerned about eavesdropping. Add your own authentication layer, if needed.
 3. **There are no guarantees of delivery.**  Itty Sockets is not a traditional messaging system.  It's a public service that is provided without any guarantees of delivery, order, or persistence.  Use it for real-time communication, not for mission-critical data.
-
-
 
 ### Privacy Concerns
 **We do not store any messages or data**
