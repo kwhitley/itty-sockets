@@ -86,7 +86,7 @@ If you want to send/receive messages from the browser (e.g. for sending informat
 
 <!-- BEGIN SNIPPET -->
 ```ts
-let connect=(e,s={})=>{let t,n=[],o=[],a=0,r=()=>{t||(t=new WebSocket(`wss://ittysockets.io/r/${e??""}?${new URLSearchParams(s)}`),t.onopen=()=>{for(;n.length;)t?.send(n.shift());a&&t?.close()},t.onmessage=(e,s=JSON.parse(e.data))=>{for(let e of o)e({...s,date:new Date(s.date)})},t.onclose=()=>(a=0,t=null))};return new Proxy(r,{get:(e,s,l)=>({ws:t,send:(e,s)=>(e=JSON.stringify(e),e=s?`@@${s}@@${e}`:e,1==t?.readyState?t.send(e)??l:(n.push(e),r()??l)),push:(e,s)=>(a=1,l.send(e,s)),listen:(e,s)=>(o.push((t=>(!s||s(t))&&e(t))),r()??l),close:()=>(1==t?.readyState?t.close():a=1,l)}[s])})};
+let connect=(e,s={})=>{let o,t=[],n=[],a=0,r={},l=()=>{o||(o=new WebSocket(`wss://ittysockets.io/r/${e??""}?${new URLSearchParams(s)}`),o.onopen=()=>{for(;t.length;)o?.send(t.shift());r.open?.(),a&&o?.close()},o.onmessage=(e,s=JSON.parse(e.data))=>{for(let e of n)e({...s,date:new Date(s.date)})},o.onclose=()=>(a=0,o=null,r.close?.()))};return new Proxy(l,{get:(e,s,c)=>({ws:o,open:l,on:(e,s)=>(r[e]=s,"message"==e&&(n.push(s),l()),c),send:(e,s)=>(e=JSON.stringify(e),e=s?`@@${s}@@${e}`:e,1==o?.readyState?o.send(e)??c:(t.push(e),l()??c)),push:(e,s)=>(a=1,c.send(e,s)),close:()=>(1==o?.readyState?o.close():a=1,c)}[s])})};
 ```
 <!-- END SNIPPET -->
 
