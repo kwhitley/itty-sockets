@@ -86,7 +86,7 @@ If you want to send/receive messages from the browser (e.g. for sending informat
 
 <!-- BEGIN SNIPPET -->
 ```ts
-let connect=(e,s={})=>{let o,t=[],n=[],a=0,r={},l=()=>{o||(o=new WebSocket(`wss://ittysockets.io/r/${e??""}?${new URLSearchParams(s)}`),o.onopen=()=>{for(;t.length;)o?.send(t.shift());r.open?.(),a&&o?.close()},o.onmessage=(e,s=JSON.parse(e.data))=>{for(let e of n)e({...s,date:new Date(s.date)})},o.onclose=()=>(a=0,o=null,r.close?.()))};return new Proxy(l,{get:(e,s,c)=>({ws:o,open:l,on:(e,s)=>(r[e]=s,"message"==e&&(n.push(s),l()),c),send:(e,s)=>(e=JSON.stringify(e),e=s?`@@${s}@@${e}`:e,1==o?.readyState?o.send(e)??c:(t.push(e),l()??c)),push:(e,s)=>(a=1,c.send(e,s)),close:()=>(1==o?.readyState?o.close():a=1,c)}[s])})};
+let connect=(e,s={})=>{let o,t=[],n=[],a=0,r={},c=()=>(o||(o=new WebSocket(`wss://ittysockets.io/r/${e??""}?${new URLSearchParams(s)}`),o.onopen=()=>{for(;t.length;)o?.send(t.shift());r.open?.(),a&&o?.close()},o.onmessage=(e,s=JSON.parse(e.data))=>{for(let e of n)e({...s,date:new Date(s.date)})},o.onclose=()=>(a=0,o=null,r.close?.())),l);const l=new Proxy(c,{get:(e,s)=>({open:c,close:()=>(1==o?.readyState?o.close():a=1,l),send:(e,s)=>(e=JSON.stringify(e),e=s?`@@${s}@@${e}`:e,1==o?.readyState?o.send(e)??l:(t.push(e),c())),push:(e,s)=>(a=1,l.send(e,s)),on:(e,s)=>(r[e]=s,"message"==e?(n.push(s),c()):l)}[s])});return l};
 ```
 <!-- END SNIPPET -->
 
@@ -101,10 +101,12 @@ connect('foo').push('hello world!')
 | METHOD | DESCRIPTION | EXAMPLE |
 | --- | --- | --- |
 | **connect(id, options)** | Creates a new connect | `connect('foo')` |
-| **send(message)** | Sends a message to the room | `room.send({ type: 'chat', text: 'hello' })` |
-| **push(message)** | Sends a message and closes the connection | `room.push({ type: 'goodbye' })` |
-| **listen(fn)** | Adds a message listener | `room.listen(msg => console.log(msg))` |
-| **close()** | Closes the connection | `room.close()` |
+| **send(message)** | Sends a message to the room | `channel.send({ type: 'chat', text: 'hello' })` |
+| **push(message)** | Sends a message and closes the connection | `channel.push({ type: 'goodbye' })` |
+| **.on('message', listener)** | Adds a message listener (multiple allowed) | `channel.on('message', event => console.log(event))` |
+| **.on('open', listener)** | Executes a listener on channel open (one allowed) | `channel.on('open', () => console.log('channel opened'))` |
+| **.on('close', listener)** | Executes a listener on channel close (one allowed) | `channel.on('close', () => console.log('channel closed'))` |
+| **close()** | Closes the connection | `channel.close()` |
 
 ### Available Options
 

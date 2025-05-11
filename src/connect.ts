@@ -1,4 +1,4 @@
-export type AllowedProperty = 'ws' | 'send' | 'push' | 'close' | 'open' | 'on'
+export type AllowedProperty = 'open' | 'close' | 'send' | 'push' | 'on' // | 'connected'
 
 export type MessageEvent<MessageType = any> = {
   date: Date
@@ -10,16 +10,15 @@ export type MessageEvent<MessageType = any> = {
 export type SendMessage = <MessageFormat = any>(message: MessageFormat, recipient?: string) => IttySocket
 
 export type IttySocket = {
-  ws?: WebSocket,
+  open: () => IttySocket,
+  close: () => IttySocket,
+  connected: boolean,
   send: SendMessage,
   push: SendMessage,
   on: <T extends string, MessageType = any>(
     type: T,
     listener: T extends 'message' ? (event: MessageEvent<MessageType>) => any : () => any,
   ) => IttySocket,
-  in: (fn: Function) => IttySocket,
-  out: (fn: Function) => IttySocket,
-  close: () => IttySocket,
 }
 
 export type IttySocketOptions = {
@@ -31,12 +30,12 @@ export type IttySocketOptions = {
 export const connect = (id: string, options: IttySocketOptions = {}): IttySocket => {
   let ws: WebSocket | null,
     queue: string[] = [],
-    listeners: Array<(event: MessageEvent) => any> = [],
-    closeAfterSend = 0,
-    events: Record<string, any> = {}
+    messageListeners: Array<(event: MessageEvent) => any> = [],
+    closeAfterSend: number = 0,
+    events: Record<string, (() => any) | undefined> = {}
 
   let open = () => {
-    if (ws) return // Don't reconnect if already opening/open
+    if (ws) return socket// Don't reconnect if already opening/open
 
     // @ts-ignore - options will be cast as string regardless of what is passed
     ws = new WebSocket(`wss://ittysockets.io/r/${id??''}?${new URLSearchParams(options)}`)
@@ -51,49 +50,46 @@ export const connect = (id: string, options: IttySocketOptions = {}): IttySocket
       event: any,
       parsed = JSON.parse(event.data),
     ) => {
-      for (let listener of listeners)
+      for (let listener of messageListeners)
         listener({ ...parsed, date: new Date(parsed.date) })
     }
 
     ws.onclose = () => (closeAfterSend = 0, ws = null, events.close?.())
+
+    return socket
   }
 
   // @ts-ignore
-  return new Proxy(open, {
-    get: (_, key: AllowedProperty, __) =>
+  const socket = new Proxy(open, {
+    get: (_, key: AllowedProperty) =>
       ({
-        ws,
         open,
-        on: <T extends string, MessageType = any>(
-          type: T,
-          listener: T extends 'message' ? (event: MessageEvent<MessageType>) => any : () => any,
-        ) => {
-          events[type] = listener
-
-          if (type == 'message') {
-            listeners.push(listener)
-            open()
-          }
-
-          return __
-        },
+        close: () => (ws?.readyState == 1 ? ws.close() : (closeAfterSend = 1), socket),
         send: (message: any, recipient?: string) => {
           message = JSON.stringify(message)
           message = recipient ? `@@${recipient}@@${message}` : message
-          if (ws?.readyState == 1) return ws.send(message) ?? __
+          if (ws?.readyState == 1) return ws.send(message) ?? socket
           queue.push(message)
-
-          return open() ?? __
+          return open()
         },
-        push: (message: any, recipient?: string) => (closeAfterSend = 1, __.send(message, recipient)),
-        close: () => (ws?.readyState == 1 ? ws.close() : (closeAfterSend = 1), __)
+        push: (message: any, recipient?: string) => (closeAfterSend = 1, socket.send(message, recipient)),
+        on: (type: string, listener: () => any) => {
+          events[type] = listener
+          if (type == 'message') {
+            messageListeners.push(listener)
+            return open()
+          }
+          return socket
+        },
       })[key]
-  })
+  }) as IttySocket
+
+  return socket
 }
 
 // connect('test')
-//   .on('close', () => {}, )
-//   .on('message', (a) => console.log(a.message.name))
+//   .on('close', () => console.log('close'))
+//   .on('message', (e) => console.log(e.message.name))
 
 // type FooMessage = {
 //   name: string

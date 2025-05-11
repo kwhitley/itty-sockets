@@ -56,11 +56,6 @@
       "import": "./connect.mjs",
       "require": "./connect.js",
       "types": "./connect.d.ts"
-    },
-    "./ws": {
-      "import": "./ws.mjs",
-      "require": "./ws.js",
-      "types": "./ws.d.ts"
     }
   }
 }
