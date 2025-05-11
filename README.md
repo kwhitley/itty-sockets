@@ -20,45 +20,28 @@ Tiny messaging client in under 400 bytes.  No backend needed.
 
 ## Example (using ittysockets.io public channels)
 ```ts
-import { connect } from 'itty-sockets' // ~400 bytes
+import { connect } from 'itty-sockets' // ~340 bytes
 
-// create a channel instance
-const foo = connect('foo', { echo: true }) // echo messages back to sender
-
-// listen for messages
-foo.listen(e => {
-  console.log(e.alias ?? e.uid, 'says', e.message, 'at', e.date)
-})
-
-// send some messages
-foo
-  .send('hello world!')
-  .send([1,2,3]) // no need to stringify
-  .send({ foo: 'bar' })
-
-// or connect, send, and close - all in one call
-foo.push('this will open, send, and close the connection')
-```
-
-## Example (other WebSocket servers)
-```ts
-import { ws } from 'itty-sockets' // ~340 bytes
-
-const foo = ws('wss://example.com', { json: true })
+// connect to a channel (optionally echo messages back to yourself)
+const foo = connect('my-secret-room-name', { echo: true })
 
 foo
-  .listen(console.log) // this will auto-parse JSON messages from the server
-  .send('hello world!')
-  .send([1,2,3])
-  .send({ foo: 'bar' })
+  // we can listen for messages
+  .on('message', e => console.log(e.message))
+
+  // and/or send some
+  .send('Hello World!')     // "Hello World!"
+  .send([1, 2, 3])          // [1, 2, 3]
+  .send({ foo: 'bar' })     // { foo: "bar" }
 ```
 
 ## Features
 
 - Simple and powerful API for sending and receiving messages & data.
-- Prevents WebSocket race conditions.
 - No backend service needed.  Ours is fast and private.
 - Full TypeScript support, including custom types for messages.
+- Prevents WebSocket race conditions.  Automatically connects when needed to send/listen.
+- Chainable. Every method returns the channel again.
 - Ultra-tiny. It's an itty library, after all.
 
 ## What is itty-sockets?
@@ -82,7 +65,7 @@ There is intentionally no message logging or tracking of any kind.  It's easier 
 
 ## Browser Usage
 
-If you want to send/receive messages from the browser (e.g. for sending information from one web page or tab to another), copy and paste this snippet directly into your browser console, then use as normal.
+For use in browser/DevTools scripting, copy and paste this snippet directly into your browser console, then use as normal:
 
 <!-- BEGIN SNIPPET -->
 ```ts
@@ -100,13 +83,15 @@ connect('foo').push('hello world!')
 
 | METHOD | DESCRIPTION | EXAMPLE |
 | --- | --- | --- |
-| **connect(id, options)** | Creates a new connect | `connect('foo')` |
-| **send(message)** | Sends a message to the room | `channel.send({ type: 'chat', text: 'hello' })` |
-| **push(message)** | Sends a message and closes the connection | `channel.push({ type: 'goodbye' })` |
+| **connect(id, options)** | Creates a new channel connection | `connect('foo')` |
+| **.open()** | Opens/re-opens the connection (manually, usually not needed) | `channel.open()` |
+| **.close()** | Closes the connection | `channel.close()` |
+| **.send(message)** | Sends a message to the room | `channel.send({ type: 'chat', text: 'hello' })` |
+| **.push(message)** | Sends a message and closes the connection | `channel.push({ type: 'goodbye' })` |
 | **.on('message', listener)** | Adds a message listener (multiple allowed) | `channel.on('message', event => console.log(event))` |
 | **.on('open', listener)** | Executes a listener on channel open (one allowed) | `channel.on('open', () => console.log('channel opened'))` |
 | **.on('close', listener)** | Executes a listener on channel close (one allowed) | `channel.on('close', () => console.log('channel closed'))` |
-| **close()** | Closes the connection | `channel.close()` |
+
 
 ### Available Options
 
