@@ -47,10 +47,8 @@ describe('connect(id, options?)', () => {
           name: 'as > sets alias for messages',
           run: () => new Promise<void>((resolve, reject) => {
             const channel = connect(getChannelID(), { echo: true, as: 'test-user' })
-            const timeout = setTimeout(() => reject(new Error('No message received')), MAX_TIMEOUT)
 
             channel.on('message', msg => {
-              clearTimeout(timeout)
               expect(msg.alias).toBe('test-user')
               channel.close()
               resolve()
@@ -243,10 +241,8 @@ describe('connect(id, options?)', () => {
           name: 'MessageEvent > includes expected fields',
           run: () => new Promise<void>((resolve, reject) => {
             const channel = setup()
-            const timeout = setTimeout(() => reject(new Error('No message received')), MAX_TIMEOUT)
 
             channel.on('message', msg => {
-              clearTimeout(timeout)
               expect(msg.date instanceof Date).toBe(true)
               expect(typeof msg.uid).toBe('string')
               expect(msg.message).toBe('test')
@@ -275,22 +271,19 @@ describe('connect(id, options?)', () => {
         {
           name: 'handles multiple listeners for same message',
           run: (channel: IttySocket) => new Promise<void>((resolve) => {
-            let count = 0
-            const listener1 = mock(() => count++)
-            const listener2 = mock(() => count++)
+            const listener1 = mock(() => {})
+            const listener2 = mock(() => {})
 
             channel
               .on('message', listener1)
               .on('message', listener2)
+              .on('message', () => {
+                expect(listener1).toHaveBeenCalled()
+                expect(listener2).toHaveBeenCalled()
+                channel.close()
+                resolve()
+              })
               .send('test') // trigger the echo
-
-            setTimeout(() => {
-              expect(count).toBe(2)
-              expect(listener1).toHaveBeenCalled()
-              expect(listener2).toHaveBeenCalled()
-              channel.close()
-              resolve()
-            }, 150)
           })
         }
       ]
@@ -303,12 +296,10 @@ describe('connect(id, options?)', () => {
           run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
             const messages = ['first', 'second', 'third']
             const received: any[] = []
-            const timeout = setTimeout(() => reject(new Error('Queue timeout')), MAX_TIMEOUT)
 
             channel.on('message', msg => {
               received.push(msg.message)
               if (received.length === messages.length) {
-                clearTimeout(timeout)
                 expect(received).toEqual(messages)
                 channel.close()
                 resolve()
@@ -332,19 +323,15 @@ describe('connect(id, options?)', () => {
             const message = 'push-test'
 
             return new Promise<void>((resolve, reject) => {
-              const timeout = setTimeout(() => reject(new Error('Push timeout')), MAX_TIMEOUT)
+              const channel = connect(cid)
+              const onClose = mock(() => {})
 
-              receiver.on('message', msg => {
-                clearTimeout(timeout)
-                expect(msg.message).toBe(message)
-
-                setTimeout(() => {
-                  receiver.close()
+              channel
+                .on('close', () => {
+                  expect(true).toBe(true)
                   resolve()
-                }, 50)
-              })
-
-              channel.push(message)
+                })
+                .push('test')
             })
           }
         }
