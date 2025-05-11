@@ -1,7 +1,4 @@
-on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-  push:
+on: [push, pull_request]
 
 name: Test Coveralls
 
