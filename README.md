@@ -16,11 +16,11 @@
 
 ---
 
-Tiny messaging client in under 400 bytes.  No backend needed.
+Tiny messaging client in under 450 bytes.  No backend needed.
 
 ## Example (using ittysockets.io public channels)
 ```ts
-import { connect } from 'itty-sockets' // ~340 bytes
+import { connect } from 'itty-sockets' // ~422 bytes
 
 // connect to a channel (optionally echo messages back to yourself)
 const foo = connect('my-secret-room-name', { echo: true })
