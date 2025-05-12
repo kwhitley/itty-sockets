@@ -1,7 +1,7 @@
 {
   "name": "itty-sockets",
-  "version": "0.2.1",
-  "description": "An easier way to handle WebSockets, in an itty package.",
+  "version": "0.2.2",
+  "description": "Tiny realtime messaging client in under 450 bytes.  No backend needed.",
   "main": "./sockets.js",
   "module": "./sockets.mjs",
   "types": "./sockets.d.ts",
@@ -19,6 +19,9 @@
   "keywords": [
     "websockets",
     "realtime",
+    "public",
+    "messages",
+    "tiny",
     "free",
     "p2p"
   ],

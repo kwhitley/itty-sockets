@@ -16,9 +16,9 @@
 
 ---
 
-Tiny messaging client in under 450 bytes.  No backend needed.
+Tiny realtime messaging client in under 450 bytes.  No backend needed.
 
-## Example (using ittysockets.io public channels)
+## Example (using [ittysockets.io](https://ittysockets.io) public channels)
 ```ts
 import { connect } from 'itty-sockets' // ~422 bytes
 
@@ -86,7 +86,7 @@ connect('foo').push('hello world!')
 | **connect(id, options)** | Creates a new channel connection | `connect('foo')` |
 | **.open()** | Opens/re-opens the connection (manually, usually not needed) | `channel.open()` |
 | **.close()** | Closes the connection | `channel.close()` |
-| **.send(message)** | Sends a message to the room | `channel.send({ type: 'chat', text: 'hello' })` |
+| **.send(message)** | Sends a message to the channel | `channel.send({ type: 'chat', text: 'hello' })` |
 | **.push(message)** | Sends a message and closes the connection | `channel.push({ type: 'goodbye' })` |
 | **.on('message', listener)** | Adds a message listener (multiple allowed) | `channel.on('message', event => console.log(event))` |
 | **.on('open', listener)** | Executes a listener on channel open (one allowed) | `channel.on('open', () => console.log('channel opened'))` |
