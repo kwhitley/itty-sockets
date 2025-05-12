@@ -20,45 +20,28 @@ Tiny messaging client in under 400 bytes.  No backend needed.
 
 ## Example (using ittysockets.io public channels)
 ```ts
-import { connect } from 'itty-sockets' // ~400 bytes
+import { connect } from 'itty-sockets' // ~340 bytes
 
-// create a channel instance
-const foo = connect('foo', { echo: true }) // echo messages back to sender
-
-// listen for messages
-foo.listen(e => {
-  console.log(e.alias ?? e.uid, 'says', e.message, 'at', e.date)
-})
-
-// send some messages
-foo
-  .send('hello world!')
-  .send([1,2,3]) // no need to stringify
-  .send({ foo: 'bar' })
-
-// or connect, send, and close - all in one call
-foo.push('this will open, send, and close the connection')
-```
-
-## Example (other WebSocket servers)
-```ts
-import { ws } from 'itty-sockets' // ~340 bytes
-
-const foo = ws('wss://example.com', { json: true })
+// connect to a channel (optionally echo messages back to yourself)
+const foo = connect('my-secret-room-name', { echo: true })
 
 foo
-  .listen(console.log) // this will auto-parse JSON messages from the server
-  .send('hello world!')
-  .send([1,2,3])
-  .send({ foo: 'bar' })
+  // we can listen for messages
+  .on('message', e => console.log(e.message))
+
+  // and/or send some
+  .send('Hello World!')     // "Hello World!"
+  .send([1, 2, 3])          // [1, 2, 3]
+  .send({ foo: 'bar' })     // { foo: "bar" }
 ```
 
 ## Features
 
 - Simple and powerful API for sending and receiving messages & data.
-- Prevents WebSocket race conditions.
 - No backend service needed.  Ours is fast and private.
 - Full TypeScript support, including custom types for messages.
+- Prevents WebSocket race conditions.  Automatically connects when needed to send/listen.
+- Chainable. Every method returns the channel again.
 - Ultra-tiny. It's an itty library, after all.
 
 ## What is itty-sockets?
@@ -82,11 +65,11 @@ There is intentionally no message logging or tracking of any kind.  It's easier 
 
 ## Browser Usage
 
-If you want to send/receive messages from the browser (e.g. for sending information from one web page or tab to another), copy and paste this snippet directly into your browser console, then use as normal.
+For use in browser/DevTools scripting, copy and paste this snippet directly into your browser console, then use as normal:
 
 <!-- BEGIN SNIPPET -->
 ```ts
-let connect=(e,s={})=>{let t,n=[],o=[],a=0,r=()=>{t||(t=new WebSocket(`wss://ittysockets.io/r/${e??""}?${new URLSearchParams(s)}`),t.onopen=()=>{for(;n.length;)t?.send(n.shift());a&&t?.close()},t.onmessage=(e,s=JSON.parse(e.data))=>{for(let e of o)e({...s,date:new Date(s.date)})},t.onclose=()=>(a=0,t=null))};return new Proxy(r,{get:(e,s,l)=>({ws:t,send:(e,s)=>(e=JSON.stringify(e),e=s?`@@${s}@@${e}`:e,1==t?.readyState?t.send(e)??l:(n.push(e),r()??l)),push:(e,s)=>(a=1,l.send(e,s)),listen:(e,s)=>(o.push((t=>(!s||s(t))&&e(t))),r()??l),close:()=>(1==t?.readyState?t.close():a=1,l)}[s])})};
+let connect=(e,s={})=>{let o,t=[],n=[],a=0,r={},c=()=>(o||(o=new WebSocket(`wss://ittysockets.io/r/${e??""}?${new URLSearchParams(s)}`),o.onopen=()=>{for(;t.length;)o?.send(t.shift());r.open?.(),a&&o?.close()},o.onmessage=(e,s=JSON.parse(e.data))=>{for(let e of n)e({...s,date:new Date(s.date)})},o.onclose=()=>(a=0,o=null,r.close?.())),l);const l=new Proxy(c,{get:(e,s)=>({open:c,close:()=>(1==o?.readyState?o.close():a=1,l),send:(e,s)=>(e=JSON.stringify(e),e=s?`@@${s}@@${e}`:e,1==o?.readyState?o.send(e)??l:(t.push(e),c())),push:(e,s)=>(a=1,l.send(e,s)),on:(e,s)=>(r[e]=s,"message"==e?(n.push(s),c()):l)}[s])});return l};
 ```
 <!-- END SNIPPET -->
 
@@ -100,11 +83,15 @@ connect('foo').push('hello world!')
 
 | METHOD | DESCRIPTION | EXAMPLE |
 | --- | --- | --- |
-| **connect(id, options)** | Creates a new connect | `connect('foo')` |
-| **send(message)** | Sends a message to the room | `room.send({ type: 'chat', text: 'hello' })` |
-| **push(message)** | Sends a message and closes the connection | `room.push({ type: 'goodbye' })` |
-| **listen(fn)** | Adds a message listener | `room.listen(msg => console.log(msg))` |
-| **close()** | Closes the connection | `room.close()` |
+| **connect(id, options)** | Creates a new channel connection | `connect('foo')` |
+| **.open()** | Opens/re-opens the connection (manually, usually not needed) | `channel.open()` |
+| **.close()** | Closes the connection | `channel.close()` |
+| **.send(message)** | Sends a message to the room | `channel.send({ type: 'chat', text: 'hello' })` |
+| **.push(message)** | Sends a message and closes the connection | `channel.push({ type: 'goodbye' })` |
+| **.on('message', listener)** | Adds a message listener (multiple allowed) | `channel.on('message', event => console.log(event))` |
+| **.on('open', listener)** | Executes a listener on channel open (one allowed) | `channel.on('open', () => console.log('channel opened'))` |
+| **.on('close', listener)** | Executes a listener on channel close (one allowed) | `channel.on('close', () => console.log('channel closed'))` |
+
 
 ### Available Options
 

@@ -7,7 +7,7 @@ import copy from 'rollup-plugin-copy'
 
 // scan files to build
 const files = (await globby('./src/*.ts', {
-  ignore: ['**/*.spec.ts', '**/types.ts'],
+  ignore: ['**/*.spec.ts', '**/types.ts', '**/*.ignore.*.ts'],
 })).map(path => ({
   path,
   shortPath: path.replace(/(\/src)|(\.ts)/g, '').replace('./index', '.'),

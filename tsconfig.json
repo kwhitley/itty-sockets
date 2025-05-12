@@ -23,5 +23,5 @@
     "module": "esnext"
   },
   "exclude": ["node_modules", "dist", "**/*.spec.ts", "examples"],
-  "include": ["src", "src/seconds.ts"]
+  "include": ["src", "src/seconds.ts", "test"]
 }
