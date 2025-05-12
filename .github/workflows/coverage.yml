@@ -1,4 +1,4 @@
-on: ['push', 'pull_request']
+on: [push, pull_request]
 
 name: Test Coveralls
 
@@ -10,11 +10,15 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
       - uses: oven-sh/setup-bun@v2.0.1
-      - name: install, make test-coverage
+
+      - name: Clean workspace and run tests
         run: |
+          git clean -xfd       # Remove all untracked files, including stale tests
           bun install
           bun test --coverage
+
       - name: Coveralls
         uses: coverallsapp/github-action@master
         with:
