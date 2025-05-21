@@ -1,6 +1,6 @@
 {
   "name": "itty-sockets",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Tiny realtime messaging client in under 450 bytes.  No backend needed.",
   "main": "./sockets.js",
   "module": "./sockets.mjs",

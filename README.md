@@ -88,7 +88,7 @@ connect('foo').push('hello world!')
 | **.close()** | Closes the connection | `channel.close()` |
 | **.send(message)** | Sends a message to the channel | `channel.send({ type: 'chat', text: 'hello' })` |
 | **.push(message)** | Sends a message and closes the connection | `channel.push({ type: 'goodbye' })` |
-| **.on('message', listener)** | Adds a message listener (multiple allowed) | `channel.on('message', event => console.log(event))` |
+| **.on<MessageType = any>('message', listener)** | Adds a message listener (multiple allowed) | `channel.on('message', event => console.log(event))` |
 | **.on('open', listener)** | Executes a listener on channel open (one allowed) | `channel.on('open', () => console.log('channel opened'))` |
 | **.on('close', listener)** | Executes a listener on channel close (one allowed) | `channel.on('close', () => console.log('channel closed'))` |
 

@@ -1,5 +1,7 @@
 export type AllowedProperty = 'open' | 'close' | 'send' | 'push' | 'on' // | 'connected'
 
+export type IttySocketEvent = 'open' | 'close' | 'message'
+
 export type MessageEvent<MessageType = any> = {
   date: Date
   uid?: string
@@ -15,10 +17,8 @@ export type IttySocket = {
   connected: boolean,
   send: SendMessage,
   push: SendMessage,
-  on: <T extends string, MessageType = any>(
-    type: T,
-    listener: T extends 'message' ? (event: MessageEvent<MessageType>) => any : () => any,
-  ) => IttySocket,
+  on<MessageFormat = any>(type: 'message', listener: (event: MessageEvent<MessageFormat>) => any): IttySocket
+  on(type: Exclude<IttySocketEvent, 'message'>, listener: () => any): IttySocket
 }
 
 export type IttySocketOptions = {
@@ -87,45 +87,12 @@ export const connect = (id: string, options: IttySocketOptions = {}): IttySocket
   return socket
 }
 
+// GENERICS TESTING
 // connect('test')
-//   .on('close', () => console.log('close'))
-//   .on('message', (e) => console.log(e.message.name))
-
-// type FooMessage = {
-//   name: string
-//   age: number
-//   pets: string[]
-// }
-// type XYMessage = {
-//   x: number
-//   y: number
-// }
-
-// connect('test', {
-//   as: 'test-user',
-// })
-
-// connect('test')
-//   .listen<FooMessage>(({ message }) => {
-//     console.log(message.name)
-//   }, (msg) => msg.message.name)
-//   .listen<XYMessage>(({ message }) => {
-//     console.log(message.x, message.y)
-//   }, (msg) => msg.message.x !== undefined)
-//   .listen<{ x: number }>(e => e.message.foo == 'bar')
-//   .push<{ x: number }>({ foo: 'bar' })
-
-/*
-
-
-const foo = connect('foo', { echo: true, as: 'Kevin' })
-
-foo.on('message', console.log)
-
-foo.in((msg) => {
-  return { ...msg, foo: 'bar' }
-})
-
-
-
-*/
+//   .on('message', (e) => console.log(e.message.name)) // OK
+//   .on<{ age: number }>('message', (e) => console.log(e.message.name)) // TS error
+//   .on('close', () => console.log('close')) // OK
+//   .on<{ x: number }>('message', (e) => parseInt(e.message.x)) // TS error
+//   .on<{ x: string }>('message', (e) => parseInt(e.message.x)) // OK
+//   .send(123) // OK
+//   .send<string>(123) // TS error
