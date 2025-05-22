@@ -1,4 +1,4 @@
-export type AllowedProperty = 'open' | 'close' | 'send' | 'push' | 'on' // | 'connected'
+export type AllowedProperty = 'open' | 'close' | 'send' | 'push' | 'on' | 'off' // | 'connected'
 
 export type IttySocketEvent = 'open' | 'close' | 'message'
 
@@ -21,6 +21,12 @@ export type IttySocket = {
   on(type: Exclude<IttySocketEvent, 'message'>, listener: () => any): IttySocket
 }
 
+type EventListeners = {
+  message?: Array<(event: MessageEvent) => any>
+  open?: Array<() => any>
+  close?: Array<() => any>
+}
+
 export type IttySocketOptions = {
   as?: string,
   alias?: string,
@@ -30,9 +36,8 @@ export type IttySocketOptions = {
 export const connect = (id: string, options: IttySocketOptions = {}): IttySocket => {
   let ws: WebSocket | null,
     queue: string[] = [],
-    messageListeners: Array<(event: MessageEvent) => any> = [],
     closeAfterSend: number = 0,
-    events: Record<string, (() => any) | undefined> = {}
+    events: EventListeners = {}
 
   let open = () => {
     if (ws) return socket// Don't reconnect if already opening/open
@@ -42,19 +47,25 @@ export const connect = (id: string, options: IttySocketOptions = {}): IttySocket
 
     ws.onopen = () => {
       while (queue.length) ws?.send(queue.shift()!)
-      events.open?.()
+      for (let listener of events.open || [])
+        listener()
       if (closeAfterSend) ws?.close()
     }
 
     ws.onmessage = (
       event: any,
-      parsed = JSON.parse(event.data),
+      parsed = JSON.parse(event.data)
     ) => {
-      for (let listener of messageListeners)
+      for (let listener of events.message || [])
         listener({ ...parsed, date: new Date(parsed.date) })
     }
 
-    ws.onclose = () => (closeAfterSend = 0, ws = null, events.close?.())
+    ws.onclose = () => {
+      closeAfterSend = 0
+      ws = null
+      for (let listener of events.close || [])
+        listener()
+    }
 
     return socket
   }
@@ -73,14 +84,18 @@ export const connect = (id: string, options: IttySocketOptions = {}): IttySocket
           return open()
         },
         push: (message: any, recipient?: string) => (closeAfterSend = 1, socket.send(message, recipient)),
-        on: (type: string, listener: () => any) => {
-          events[type] = listener
-          if (type == 'message') {
-            messageListeners.push(listener)
-            return open()
-          }
-          return socket
+        on: (type: IttySocketEvent, listener: () => any) => {
+          (events[type] || (events[type] = [])).push(listener)
+          return open()
         },
+        off: (
+          type: IttySocketEvent,
+          listener: () => any,
+          listeners = events[type],
+          i = listeners?.indexOf(listener) || -1
+        ) => (
+          ~i && listeners?.splice(i, 1)
+        ),
       })[key]
   }) as IttySocket
 
