@@ -43,10 +43,11 @@ type EventListeners = {
 export type IttySocketOptions = {
   as?: string,
   alias?: string,
-  echo?: boolean,
+  echo?: true,
+  announce?: true,
 }
 
-export const connect = (id: string, options: IttySocketOptions = {}): IttySocket => {
+export const connect = (channelId: string, options: IttySocketOptions = {}): IttySocket => {
   let ws: WebSocket | null,
     queue: string[] = [],
     closeAfterSend: number = 0,
@@ -56,11 +57,11 @@ export const connect = (id: string, options: IttySocketOptions = {}): IttySocket
     if (ws) return socket// Don't reconnect if already opening/open
 
     // @ts-ignore - options will be cast as string regardless of what is passed
-    ws = new WebSocket(`wss://ittysockets.io/r/${id??''}?${new URLSearchParams(options)}`)
+    ws = new WebSocket(`wss://ittysockets.io/r/${channelId}?${new URLSearchParams(options)}`)
 
     ws.onopen = () => {
       while (queue.length) ws?.send(queue.shift()!)
-      for (let listener of events.open || [])
+      for (let listener of events.open ?? [])
         listener()
       if (closeAfterSend) ws?.close()
     }
@@ -77,7 +78,7 @@ export const connect = (id: string, options: IttySocketOptions = {}): IttySocket
     ws.onclose = () => {
       closeAfterSend = 0
       ws = null
-      for (let listener of events.close || [])
+      for (let listener of events.close ?? [])
         listener()
     }
 
@@ -99,16 +100,17 @@ export const connect = (id: string, options: IttySocketOptions = {}): IttySocket
         },
         push: (message: any, recipient?: string) => (closeAfterSend = 1, socket.send(message, recipient)),
         on: (type: IttySocketEvent, listener: () => any) => {
-          (events[type] || (events[type] = [])).push(listener)
+          (events[type] ??= []).push(listener)
           return open()
         },
         off: (
           type: IttySocketEvent,
           listener: () => any,
           listeners = events[type],
-          i = listeners?.indexOf(listener) || -1
+          i = listeners?.indexOf(listener) ?? -1
         ) => (
-          ~i && listeners?.splice(i, 1)
+          ~i && listeners?.splice(i, 1),
+          open()
         ),
       })[key]
   }) as IttySocket

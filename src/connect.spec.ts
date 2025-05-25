@@ -20,8 +20,9 @@ describe('connect(id, options?)', () => {
         {
           name: 'exposes .send, .push, .on, .close, .open',
           run: (channel: IttySocket) => {
-            for (const method of ['send', 'push', 'on', 'close', 'open']) {
+            for (const method of ['send', 'push', 'on', 'off', 'close', 'open']) {
               expect(typeof channel[method]).toBe('function')
+              expect(channel[method]()).toBe(channel)
             }
           }
         }
@@ -104,12 +105,6 @@ describe('connect(id, options?)', () => {
       name: `.on('open', listener)`,
       cases: [
         {
-          name: 'returns the socket',
-          run: (channel: IttySocket) => {
-            expect(channel.on('close', () => {})).toBe(channel)
-          }
-        },
-        {
           name: 'registers an event listener that is called when the socket is opened',
           run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
             channel
@@ -121,11 +116,11 @@ describe('connect(id, options?)', () => {
           })
         },
         {
-          name: 'only allows one open listener (will replace any existing one)',
+          name: 'only multiple listeners',
           run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
             const spy1 = mock(() => {})
             const spy2 = mock(() => {
-              expect(spy1).not.toHaveBeenCalled()
+              expect(spy1).toHaveBeenCalled()
               resolve()
             })
 
@@ -140,12 +135,6 @@ describe('connect(id, options?)', () => {
     {
       name: `.on('close', listener)`,
       cases: [
-        {
-          name: 'returns the socket',
-          run: (channel: IttySocket) => {
-            expect(channel.on('close', () => {})).toBe(channel)
-          }
-        },
         {
           name: 'registers an event listener that is called when the socket is closed',
           run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
@@ -162,7 +151,7 @@ describe('connect(id, options?)', () => {
           })
         },
         {
-          name: 'only allows one close listener (will replace any existing one)',
+          name: 'allows multiple listeners listeners',
           run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
             const spy1 = mock(() => {})
             const spy2 = mock(() => {})
@@ -171,7 +160,7 @@ describe('connect(id, options?)', () => {
               .on('close', spy2)
               .on('open', () => {
                 channel.close()
-                expect(spy1).not.toHaveBeenCalled()
+                expect(spy1).toHaveBeenCalled()
                 expect(spy2).toHaveBeenCalled()
                 resolve()
               })
@@ -183,12 +172,6 @@ describe('connect(id, options?)', () => {
     {
       name: `.on('message', messageListener)`,
       cases: [
-        {
-          name: 'returns the socket',
-          run: (channel: IttySocket) => {
-            expect(channel.on('close', () => {})).toBe(channel)
-          }
-        },
         {
           name: 'registers an event listener that is called when a message is received',
           run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
