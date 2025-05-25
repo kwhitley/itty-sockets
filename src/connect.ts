@@ -1,13 +1,22 @@
-export type AllowedProperty = 'open' | 'close' | 'send' | 'push' | 'on' | 'off' // | 'connected'
+export type IttySocketEvent = 'open' | 'close' | 'message' | 'join' | 'leave'
 
-export type IttySocketEvent = 'open' | 'close' | 'message'
+type Date = { date: Date }
+type UserDetails = { uid: string, alias?: string }
+type OptionalUserDetails = { uid?: string, alias?: string }
 
 export type MessageEvent<MessageType = any> = {
-  date: Date
-  uid?: string
-  alias?: string
   message: MessageType
-}
+} & Date & UserDetails
+
+export type JoinEvent = {
+  type: 'join'
+  users: number
+} & Date & OptionalUserDetails
+
+export type LeaveEvent = {
+  type: 'leave'
+  users: number
+} & Date & OptionalUserDetails
 
 export type SendMessage = <MessageFormat = any>(message: MessageFormat, recipient?: string) => IttySocket
 
@@ -18,13 +27,17 @@ export type IttySocket = {
   send: SendMessage,
   push: SendMessage,
   on<MessageFormat = any>(type: 'message', listener: (event: MessageEvent<MessageFormat>) => any): IttySocket
+  on(type: 'join', listener: (event: JoinEvent) => any): IttySocket
+  on(type: 'leave', listener: (event: LeaveEvent) => any): IttySocket
   on(type: Exclude<IttySocketEvent, 'message'>, listener: () => any): IttySocket
 }
 
 type EventListeners = {
-  message?: Array<(event: MessageEvent) => any>
   open?: Array<() => any>
   close?: Array<() => any>
+  message?: Array<(event: MessageEvent) => any>
+  join?: Array<(event: JoinEvent) => any>
+  leave?: Array<(event: LeaveEvent) => any>
 }
 
 export type IttySocketOptions = {
@@ -54,9 +67,10 @@ export const connect = (id: string, options: IttySocketOptions = {}): IttySocket
 
     ws.onmessage = (
       event: any,
-      parsed = JSON.parse(event.data)
+      parsed = JSON.parse(event.data),
     ) => {
-      for (let listener of events.message || [])
+      // @ts-ignore
+      for (let listener of events[parsed.type ?? 'message'] ?? [])
         listener({ ...parsed, date: new Date(parsed.date) })
     }
 
@@ -72,7 +86,7 @@ export const connect = (id: string, options: IttySocketOptions = {}): IttySocket
 
   // @ts-ignore
   const socket = new Proxy(open, {
-    get: (_, key: AllowedProperty) =>
+    get: (_, key: string) =>
       ({
         open,
         close: () => (ws?.readyState == 1 ? ws.close() : (closeAfterSend = 1), socket),
@@ -111,3 +125,5 @@ export const connect = (id: string, options: IttySocketOptions = {}): IttySocket
 //   .on<{ x: string }>('message', (e) => parseInt(e.message.x)) // OK
 //   .send(123) // OK
 //   .send<string>(123) // TS error
+//   .on('join', e => console.log(e.users + 4)) // OK
+//   .on('leave', e => console.log(e.users - 4)) // OK

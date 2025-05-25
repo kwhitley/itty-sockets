@@ -69,7 +69,7 @@ For use in browser/DevTools scripting, copy and paste this snippet directly into
 
 <!-- BEGIN SNIPPET -->
 ```ts
-let connect=(e,o={})=>{let s,t=[],n=0,a={},r=()=>(s||(s=new WebSocket(`wss://ittysockets.io/r/${e??""}?${new URLSearchParams(o)}`),s.onopen=()=>{for(;t.length;)s?.send(t.shift());for(let e of a.open||[])e();n&&s?.close()},s.onmessage=(e,o=JSON.parse(e.data))=>{for(let e of a.message||[])e({...o,date:new Date(o.date)})},s.onclose=()=>{n=0,s=null;for(let e of a.close||[])e()}),l);const l=new Proxy(r,{get:(e,o)=>({open:r,close:()=>(1==s?.readyState?s.close():n=1,l),send:(e,o)=>(e=JSON.stringify(e),e=o?`@@${o}@@${e}`:e,1==s?.readyState?s.send(e)??l:(t.push(e),r())),push:(e,o)=>(n=1,l.send(e,o)),on:(e,o)=>((a[e]||(a[e]=[])).push(o),r()),off:(e,o,s=a[e],t=s?.indexOf(o)||-1)=>~t&&s?.splice(t,1)}[o])});return l};
+let connect=(e,o={})=>{let s,t=[],n=0,a={},r=()=>(s||(s=new WebSocket(`wss://ittysockets.io/r/${e??""}?${new URLSearchParams(o)}`),s.onopen=()=>{for(;t.length;)s?.send(t.shift());for(let e of a.open||[])e();n&&s?.close()},s.onmessage=(e,o=JSON.parse(e.data))=>{for(let e of a[o.type??"message"]??[])e({...o,date:new Date(o.date)})},s.onclose=()=>{n=0,s=null;for(let e of a.close||[])e()}),l);const l=new Proxy(r,{get:(e,o)=>({open:r,close:()=>(1==s?.readyState?s.close():n=1,l),send:(e,o)=>(e=JSON.stringify(e),e=o?`@@${o}@@${e}`:e,1==s?.readyState?s.send(e)??l:(t.push(e),r())),push:(e,o)=>(n=1,l.send(e,o)),on:(e,o)=>((a[e]||(a[e]=[])).push(o),r()),off:(e,o,s=a[e],t=s?.indexOf(o)||-1)=>~t&&s?.splice(t,1)}[o])});return l};
 ```
 <!-- END SNIPPET -->
 
