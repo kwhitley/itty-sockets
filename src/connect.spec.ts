@@ -255,6 +255,54 @@ describe('connect(id, options?)', () => {
       ]
     },
     {
+      name: `.on('leave', messageListener)`,
+      cases: [
+        {
+          name: 'registers an event listener that is called when a user leaves the channel',
+          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
+            const channelID = getChannelID()
+            const user1 = connect(channelID).push('test')
+            const user2 = connect(channelID).on('leave', (e) => {
+              expect(e.users).toBe(1)
+              channel.close()
+              resolve()
+            })
+          })
+        },
+        {
+          name: 'does not include user details when { announce: true } is not set',
+          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
+            const channelID = getChannelID()
+            const user1 = connect(channelID)
+              .on('join', ({ users }) => {
+                if (users === 2) user1.close()
+              })
+            const user2 = connect(channelID).on('leave', (e) => {
+              expect(e.users).toBe(1)
+              expect(e.uid).toBeUndefined()
+              expect(e.alias).toBeUndefined()
+              channel.close()
+              resolve()
+            })
+          })
+        },
+        {
+          name: 'includes a user details when the { announce: true } option is set',
+          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
+            const channelID = getChannelID()
+            const user1 = connect(channelID, { announce: true, alias: 'test-user' }).push('test')
+            const user2 = connect(channelID).on('leave', (e) => {
+              expect(e.users).toBe(1)
+              expect(e.uid).not.toBeUndefined()
+              expect(e.alias).toBe('test-user')
+              channel.close()
+              resolve()
+            })
+          })
+        },
+      ]
+    },
+    {
       name: '.send(message, recipient?)',
       cases: [
         {
