@@ -18,6 +18,11 @@ export type LeaveEvent = {
   users: number
 } & Date & OptionalUserDetails
 
+export type ErrorEvent = {
+  type: 'error'
+  message: string
+} & Date
+
 export type SendMessage = <MessageFormat = any>(message: MessageFormat, recipient?: string) => IttySocket
 
 export type IttySocket = {
@@ -29,6 +34,7 @@ export type IttySocket = {
   on<MessageFormat = any>(type: 'message', listener: (event: MessageEvent<MessageFormat>) => any): IttySocket
   on(type: 'join', listener: (event: JoinEvent) => any): IttySocket
   on(type: 'leave', listener: (event: LeaveEvent) => any): IttySocket
+  on(type: 'error', listener: (event: ErrorEvent) => any): IttySocket
   on(type: Exclude<IttySocketEvent, 'message'>, listener: () => any): IttySocket
 }
 
@@ -129,3 +135,5 @@ export const connect = (channelId: string, options: IttySocketOptions = {}): Itt
 //   .send<string>(123) // TS error
 //   .on('join', e => console.log(e.users + 4)) // OK
 //   .on('leave', e => console.log(e.users - 4)) // OK
+//   .on('error', e => console.log(e.message)) // OK
+//   .on('error', e => console.log(e.foo)) // TS error

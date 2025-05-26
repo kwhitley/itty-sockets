@@ -206,6 +206,55 @@ describe('connect(id, options?)', () => {
       ]
     },
     {
+      name: `.on('join', messageListener)`,
+      cases: [
+        {
+          name: 'registers an event listener that is called when a user (or self) joins the channel',
+          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
+            const spy = mock(() => {})
+
+            channel
+              .on('join', e => {
+                expect(e.users).toBe(1)
+                channel.close()
+                resolve()
+              })
+              .send('test')
+          })
+        },
+        {
+          name: 'does not include user details when { announce: true } is not set',
+          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
+            channel = connect(getChannelID(), { alias: 'test-user' })
+
+            channel
+              .on('join', e => {
+                expect(e.uid).toBeUndefined()
+                expect(e.alias).toBeUndefined()
+                channel.close()
+                resolve()
+              })
+              .send('test')
+          })
+        },
+        {
+          name: 'includes a user details when the { announce: true } option is set',
+          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
+            channel = connect(getChannelID(), { announce: true, alias: 'test-user' })
+
+            channel
+              .on('join', e => {
+                expect(e.uid).not.toBeUndefined()
+                expect(e.alias).toBe('test-user')
+                channel.close()
+                resolve()
+              })
+              .send('test')
+          })
+        },
+      ]
+    },
+    {
       name: '.send(message, recipient?)',
       cases: [
         {
@@ -236,19 +285,44 @@ describe('connect(id, options?)', () => {
           })
         },
         {
-          name: 'sends private messages to recipient',
+          name: 'sending a message to a recipient that does NOT exist will return an error',
           run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
             const recipient = 'user-' + Math.random().toString(36).slice(2)
             const message = 'private-message'
 
             channel
-              .on('message', e => {
-                expect(e.uid).toBeUndefined()
+              .on('error', e => {
                 expect(e.message).toContain(recipient)
                 channel.close()
                 resolve()
               })
               .send(message, recipient)
+          })
+        },
+        {
+          name: 'sending a message to a recipient that DOES exist will privately send the message',
+          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
+            let privateMessageIntercepted = false
+            const spy = mock((e) => e.message)
+            const channelID = getChannelID()
+            const user1 = connect(channelID)
+            const user2 = connect(channelID)
+            const user3 = connect(channelID).on('message', e => {
+              if (e.message === 'private') {
+                privateMessageIntercepted = true
+              }
+            })
+
+            user1
+              .send('test')
+              .on('message', e => {
+                expect(e.message).toBe('private')
+                expect(privateMessageIntercepted).toBe(false)
+                resolve()
+              })
+            user2.on('message', (e) => {
+              user2.send('private', e.uid) // respond privately to test message
+            })
           })
         },
         {
