@@ -32,8 +32,8 @@ The idea is simple:
 ```ts
 import { connect } from 'itty-sockets'
 
-// connect to a channel (optionally echo messages back to yourself)
-const foo = connect('my-secret-room-name', { echo: true })
+// connect to a channel
+const foo = connect('my-secret-room-name')
 
 foo
   // we can listen for messages
