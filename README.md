@@ -56,10 +56,22 @@ foo
 
 # Getting Started
 
-## 1. Create a Channel
-To start, simply connect to a channel based on a unique name (this can be anything).
+### 1. Import the [tiny client](https://npmjs.com/package/itty-sockets).
+```ts
+import { connect } from 'itty-sockets'
+```
 
-#### `connect(channelName: string, options?: IttySocketsOptions)`
+...or simply paste this into your environment/console:
+<!-- BEGIN SNIPPET -->
+```ts
+let connect=(e,o={})=>{let s,t=[],n=0,a={},r=()=>(s||(s=new WebSocket(`wss://ittysockets.io/r/${e??""}?${new URLSearchParams(o)}`),s.onopen=()=>{for(;t.length;)s?.send(t.shift());for(let e of a.open??[])e();n&&s?.close()},s.onmessage=(e,o=JSON.parse(e.data))=>{for(let e of a[o.type??"message"]??[])e({...o,date:new Date(o.date)})},s.onclose=()=>{n=0,s=null;for(let e of a.close??[])e()}),l);const l=new Proxy(r,{get:(e,o)=>({open:r,close:()=>(1==s?.readyState?s.close():n=1,l),send:(e,o)=>(e=JSON.stringify(e),e=o?`@@${o}@@${e}`:e,1==s?.readyState?s.send(e)??l:(t.push(e),r())),push:(e,o)=>(n=1,l.send(e,o)),on:(e,o)=>((a[e]??=[]).push(o),r()),off:(e,o,s=a[e],t=s?.indexOf(o)??-1)=>(~t&&s?.splice(t,1),r())}[o])});return l};
+```
+<!-- END SNIPPET -->
+
+<br />
+
+### 2. Create a Channel
+To start, simply connect to a channel based on a unique name (this can be anything).
 
 ```ts
 import { connect } from 'itty-sockets'
@@ -86,7 +98,8 @@ const channel = connect('my-channels/my-super-secret-channel', {
 
 <br />
 
-## 2. Use the channel (available methods)
+### 3. Use the channel.
+With the channel connected, simply call methods on it.  Every method is chainable, returning the connection again (for more chaining).
 
 | method | description | example |
 | --- | --- | --- |
@@ -97,8 +110,32 @@ const channel = connect('my-channels/my-super-secret-channel', {
 | **`.on(eventName: string, listener)`** | Add an event listener. | `channel.on('close', () => console.log('channel closed'))` |
 | **`.off(eventName: string, listener)`** | Remove an event listener. The 2nd argument must be the same listener function registered in the `on` method. | `channel.off('open', myListenerFunction)` |
 
-### Events
-Each event can have multiple listeners registered on it
+#### Example
+
+```ts
+
+// connect
+const channel = connect('my-secret-channel')
+
+// add event listeners or send messages
+
+channel
+  .on('message', ({ alias, uid, message, date }) =>
+    `${alias ?? uid} says: ${message} @ ${date.toLocaleTimeString()}`
+  )
+  .on('join', ({ users }) => 
+    `A user has joined.  There are now ${users} in the channel.`
+  )
+  .on('leave', ({ users }) => 
+    `A user has left.  There are now ${users} in the channel.`
+  )
+  .send('Hello World!') // this will queue up and send the message once connected
+```
+
+<br />
+
+# Events
+Each event can have multiple listeners registered on it.  These are stable, even if the underlying WebSocket is broken/re-established.
 | event name | description | payload | example |
 | --- | --- | --- | --- |
 | `message` | Triggered when receiving a message event. | [MessageEvent](#messageevent) | `channel.on<MessageType = any>('message', listener)` |
@@ -150,15 +187,5 @@ type MessageEvent = {
   message: any    // the message payload
 }
 ```
-
-# Injectable Script (e.g. for use in the browser console, etc.)
-
-To test in the console, simply paste this snippet directly into your browser console to give access to the `connect()` function, then use as normal.  You'll lose TypeScript hinting (obviously), but this is the entire function!
-
-<!-- BEGIN SNIPPET -->
-```ts
-let connect=(e,o={})=>{let s,t=[],n=0,a={},r=()=>(s||(s=new WebSocket(`wss://ittysockets.io/r/${e??""}?${new URLSearchParams(o)}`),s.onopen=()=>{for(;t.length;)s?.send(t.shift());for(let e of a.open??[])e();n&&s?.close()},s.onmessage=(e,o=JSON.parse(e.data))=>{for(let e of a[o.type??"message"]??[])e({...o,date:new Date(o.date)})},s.onclose=()=>{n=0,s=null;for(let e of a.close??[])e()}),l);const l=new Proxy(r,{get:(e,o)=>({open:r,close:()=>(1==s?.readyState?s.close():n=1,l),send:(e,o)=>(e=JSON.stringify(e),e=o?`@@${o}@@${e}`:e,1==s?.readyState?s.send(e)??l:(t.push(e),r())),push:(e,o)=>(n=1,l.send(e,o)),on:(e,o)=>((a[e]??=[]).push(o),r()),off:(e,o,s=a[e],t=s?.indexOf(o)??-1)=>(~t&&s?.splice(t,1),r())}[o])});return l};
-```
-<!-- END SNIPPET -->
 
 
