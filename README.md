@@ -121,13 +121,13 @@ const channel = connect('my-secret-channel')
 
 channel
   .on('message', ({ alias, uid, message, date }) =>
-    `${alias ?? uid} says: ${message} @ ${date.toLocaleTimeString()}`
+    console.log(`${alias ?? uid} says: ${message} @ ${date.toLocaleTimeString()}`)
   )
   .on('join', ({ users }) => 
-    `A user has joined.  There are now ${users} in the channel.`
+    console.log(`A user has joined.  There are now ${users} in the channel.`)
   )
   .on('leave', ({ users }) => 
-    `A user has left.  There are now ${users} in the channel.`
+    console.log(`A user has left.  There are now ${users} in the channel.`)
   )
   .send('Hello World!') // this will queue up and send the message once connected
 ```
