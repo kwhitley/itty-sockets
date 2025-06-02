@@ -88,10 +88,14 @@ connect('foo').push('hello world!')
 | **.close()** | Closes the connection | `channel.close()` |
 | **.send(message)** | Sends a message to the channel | `channel.send({ type: 'chat', text: 'hello' })` |
 | **.push(message)** | Sends a message and closes the connection | `channel.push({ type: 'goodbye' })` |
-| **.on<MessageType = any>('message', listener)** | Adds a message listener (multiple allowed) | `channel.on('message', event => console.log(event))` |
-| **.on('open', listener)** | Executes a listener on channel open (one allowed) | `channel.on('open', () => console.log('channel opened'))` |
-| **.on('close', listener)** | Executes a listener on channel close (one allowed) | `channel.on('close', () => console.log('channel closed'))` |
+| **.on(EventName: string, listener)** | Add an event listener. | `channel.on('close', () => console.log('channel closed'))` |
+| **.off(EventName: string, listener)** | Remove an event listener. | `channel.off('open', myListenerFunction)` |
 
+### Events
+Each event can have multiple listeners registered on it
+| EVENT | DESCRIPTION | PAYLOAD | EXAMPLE |
+| --- | --- | --- | --- |
+| **message** | Triggered when receiving a message event. | #messageevent-format | `channel.on<MessageType = any>('message', listener)` |
 
 ### Available Options
 

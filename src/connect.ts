@@ -36,6 +36,7 @@ export type IttySocket = {
   on(type: 'leave', listener: (event: LeaveEvent) => any): IttySocket
   on(type: 'error', listener: (event: ErrorEvent) => any): IttySocket
   on(type: Exclude<IttySocketEvent, 'message'>, listener: () => any): IttySocket
+  off(listener: () => any): IttySocket
 }
 
 type EventListeners = {
@@ -69,7 +70,8 @@ export const connect = (channelId: string, options: IttySocketOptions = {}): Itt
       while (queue.length) ws?.send(queue.shift()!)
       for (let listener of events.open ?? [])
         listener()
-      if (closeAfterSend) ws?.close()
+      // @ts-ignore
+      if (closeAfterSend) ws.close()
     }
 
     ws.onmessage = (
