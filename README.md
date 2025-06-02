@@ -139,14 +139,19 @@ Each event can have multiple listeners registered on it.  These are stable, even
 | event name | description | payload | example |
 | --- | --- | --- | --- |
 | `message` | Triggered when receiving a message event. | [MessageEvent](#messageevent) | `channel.on<MessageType = any>('message', listener)` |
-| `join` | Triggered when a user (including self) joins the channel. This alerts all users that someone has joined, and informs them of the total number of users in the channel. If the joining party connected with { announce: true }, their user details will be shared with the channel. | [JoinEvent](#joineevent) | `channel.on('join', e => console.log('There are now', e.users, 'users in the channel')` |
-| `leave` | Triggered when a user leaves the channel. This alerts all users that someone has left, and informs them of the total number of users in the channel. If the leaving party connected with { announce: true }, their user details will be shared with the channel. | [LeaveEvent](#leaveeevent) | `channel.on('leave', e => console.log('There are now', e.users, 'users in the channel')` |
+| `join` | Triggered when a user (including self) joins the channel. This alerts all users that someone has joined, and informs them of the total number of users in the channel. If the joining party connected with { announce: true }, their user details will be shared with the channel. | [JoinEvent](#joineevent) | `channel.on('join', e => console.log('There are now', e.users, 'users in the channel.')` |
+| `leave` | Triggered when a user leaves the channel. This alerts all users that someone has left, and informs them of the total number of users in the channel. If the leaving party connected with { announce: true }, their user details will be shared with the channel. | [LeaveEvent](#leaveeevent) | `channel.on('leave', e => console.log('There are now', e.users, 'users in the channel.')` |
 | `error` | Triggered when the server sends an error to the user. This is rare. | [ErrorEvent](#error) | `channel.on('error', e => console.error('IttySockets Error:', e.message)` |
+| `open` | Triggered when the connection is established. | none | `channel.on('open', () => console.log('connected to channel.')` |
+| `close` | Triggered when the connection is closed. | none | `channel.on('close', () => console.log('disconnected from channel.')` |
 
-# EventTypes
+
+<br />
+
+## EventTypes
 All event types *other* than `message` are identified with a `type` attribute.  For the sake of smaller payloads, `type` is omitted on normal messages.
 
-### MessageEvent
+#### MessageEvent
 ```ts
 type MessageEvent = {
   id: string      // unique message ID
@@ -157,7 +162,7 @@ type MessageEvent = {
 }
 ```
 
-### JoinEvent <a id="joinevent" />
+#### JoinEvent <a id="joinevent" />
 ```ts
 type JoinEvent = {
   type: 'join'    // type of event
@@ -168,7 +173,7 @@ type JoinEvent = {
 }
 ```
 
-### LeaveEvent
+#### LeaveEvent
 ```ts
 type LeaveEvent = {
   type: 'leave'   // type of event
@@ -179,7 +184,7 @@ type LeaveEvent = {
 }
 ```
 
-### ErrorEvent
+#### ErrorEvent
 ```ts
 type MessageEvent = {
   type: 'error'   // error event identifier
