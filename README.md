@@ -12,7 +12,7 @@
 [![Issues](https://img.shields.io/github/issues/kwhitley/itty-sockets?style=flat-square)](https://github.com/kwhitley/itty-sockets/issues)
 [![Discord](https://img.shields.io/discord/832353585802903572?label=Discord&logo=Discord&style=flat-square&logoColor=fff)](https://discord.gg/53vyrZAu9u)
 
-### [Documentation](https://itty.dev/itty-sockets) &nbsp;| &nbsp; [Discord](https://discord.gg/53vyrZAu9u)
+### [Documentation](https://ittysockets.io) &nbsp;| &nbsp; [Discord](https://discord.gg/53vyrZAu9u)
 
 ---
 
@@ -56,7 +56,7 @@ foo
 
 # Getting Started
 
-## 1. Create a Channel 
+## 1. Create a Channel
 To start, simply connect to a channel based on a unique name (this can be anything).
 
 #### `connect(channelName: string, options?: IttySocketsOptions)`
@@ -68,9 +68,9 @@ import { connect } from 'itty-sockets'
 const channel = connect('my-channels/my-super-secret-channel')
 
 // with options
-const channel = connect('my-channels/my-super-secret-channel', { 
+const channel = connect('my-channels/my-super-secret-channel', {
                   as: 'Kevin',
-                  announce: true, 
+                  announce: true,
                   echo: true
                 })
 ```
