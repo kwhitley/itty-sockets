@@ -64,7 +64,7 @@ import { connect } from 'itty-sockets'
 ...or simply paste this into your environment/console:
 <!-- BEGIN SNIPPET -->
 ```ts
-let connect=(e,o={})=>{let s,t=[],n=0,a={},r=()=>(s||(s=new WebSocket(`wss://ittysockets.io/r/${e??""}?${new URLSearchParams(o)}`),s.onopen=()=>{for(;t.length;)s?.send(t.shift());for(let e of a.open??[])e();n&&s?.close()},s.onmessage=(e,o=JSON.parse(e.data))=>{for(let e of a[o.type??"message"]??[])e({...o,date:new Date(o.date)})},s.onclose=()=>{n=0,s=null;for(let e of a.close??[])e()}),l);const l=new Proxy(r,{get:(e,o)=>({open:r,close:()=>(1==s?.readyState?s.close():n=1,l),send:(e,o)=>(e=JSON.stringify(e),e=o?`@@${o}@@${e}`:e,1==s?.readyState?s.send(e)??l:(t.push(e),r())),push:(e,o)=>(n=1,l.send(e,o)),on:(e,o)=>((a[e]??=[]).push(o),r()),off:(e,o,s=a[e],t=s?.indexOf(o)??-1)=>(~t&&s?.splice(t,1),r())}[o])});return l};
+let connect=(e,o={})=>{let s,t=[],n=0,r={},a=()=>(s||(s=new WebSocket(`wss://ittysockets.io/r/${e}?${new URLSearchParams(o)}`),s.onopen=()=>{for(;t.length;)s?.send(t.shift());for(let e of r.open??[])e();n&&s.close()},s.onmessage=(e,o=JSON.parse(e.data))=>{for(let e of r[o.type??"message"]??[])e({...o,date:new Date(o.date)})},s.onclose=()=>{n=0,s=null;for(let e of r.close??[])e()}),l);const l=new Proxy(a,{get:(e,o)=>({open:a,close:()=>(1==s?.readyState?s.close():n=1,l),send:(e,o)=>(e=JSON.stringify(e),e=o?`@@${o}@@${e}`:e,1==s?.readyState?(s.send(e),l):(t.push(e),a())),push:(e,o)=>(n=1,l.send(e,o)),on:(e,o)=>((r[e]??=[]).push(o),a()),remove:(e,o,s=r[e],t=s?.indexOf(o)??-1)=>(~t&&s?.splice(t,1),a())}[o])});return l};
 ```
 <!-- END SNIPPET -->
 
@@ -108,7 +108,7 @@ With the channel connected, simply call methods on it.  Every method is chainabl
 | **`.send(message: any)`** | Sends a message to the channel.  This can be anything serializable with JSON.stringify. | `channel.send({ type: 'chat', text: 'hello' })` |
 | **`.push(message: any)`** | Sends a message and immediately closes the connection. | `channel.push('Hello World!')` |
 | **`.on(eventName: string, listener)`** | Add an event listener. | `channel.on('close', () => console.log('channel closed'))` |
-| **`.off(eventName: string, listener)`** | Remove an event listener. The 2nd argument must be the same listener function registered in the `on` method. | `channel.off('open', myListenerFunction)` |
+| **`.remove(eventName: string, listener)`** | Remove an event listener. The 2nd argument must be the same listener function registered in the `on` method. | `channel.remove('open', myListenerFunction)` |
 
 #### Example
 
@@ -123,10 +123,10 @@ channel
   .on('message', ({ alias, uid, message, date }) =>
     `${alias ?? uid} says: ${message} @ ${date.toLocaleTimeString()}`
   )
-  .on('join', ({ users }) => 
+  .on('join', ({ users }) =>
     `A user has joined.  There are now ${users} in the channel.`
   )
-  .on('leave', ({ users }) => 
+  .on('leave', ({ users }) =>
     `A user has left.  There are now ${users} in the channel.`
   )
   .send('Hello World!') // this will queue up and send the message once connected

@@ -36,7 +36,7 @@ export type IttySocket = {
   on(type: 'leave', listener: (event: LeaveEvent) => any): IttySocket
   on(type: 'error', listener: (event: ErrorEvent) => any): IttySocket
   on(type: Exclude<IttySocketEvent, 'message'>, listener: () => any): IttySocket
-  off(listener: () => any): IttySocket
+  remove(type: IttySocketEvent, listener: () => any): IttySocket
 }
 
 type EventListeners = {
@@ -102,7 +102,7 @@ export const connect = (channelId: string, options: IttySocketOptions = {}): Itt
         send: (message: any, recipient?: string) => {
           message = JSON.stringify(message)
           message = recipient ? `@@${recipient}@@${message}` : message
-          if (ws?.readyState == 1) return ws.send(message) ?? socket
+          if (ws?.readyState == 1) return (ws.send(message), socket)
           queue.push(message)
           return open()
         },
@@ -111,7 +111,7 @@ export const connect = (channelId: string, options: IttySocketOptions = {}): Itt
           (events[type] ??= []).push(listener)
           return open()
         },
-        off: (
+        remove: (
           type: IttySocketEvent,
           listener: () => any,
           listeners = events[type],
@@ -129,13 +129,14 @@ export const connect = (channelId: string, options: IttySocketOptions = {}): Itt
 // GENERICS TESTING
 // connect('test')
 //   .on('message', (e) => console.log(e.message.name)) // OK
-//   .on<{ age: number }>('message', (e) => console.log(e.message.name)) // TS error
+//   .on<{ age: number }>('message', (e) => console.log(e.message.name)) // error
 //   .on('close', () => console.log('close')) // OK
-//   .on<{ x: number }>('message', (e) => parseInt(e.message.x)) // TS error
+//   .on<{ x: number }>('message', (e) => parseInt(e.message.x)) // error
 //   .on<{ x: string }>('message', (e) => parseInt(e.message.x)) // OK
 //   .send(123) // OK
-//   .send<string>(123) // TS error
+//   .send<string>(123) // error
 //   .on('join', e => console.log(e.users + 4)) // OK
+//   .on('join', e => console.log(e.message)) // error
 //   .on('leave', e => console.log(e.users - 4)) // OK
 //   .on('error', e => console.log(e.message)) // OK
-//   .on('error', e => console.log(e.foo)) // TS error
+//   .on('error', e => console.log(e.foo)) // error

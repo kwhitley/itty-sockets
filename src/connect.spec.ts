@@ -1,13 +1,13 @@
-import { describe, expect, it, beforeEach, afterEach, mock } from 'bun:test'
-import { connect, MessageEvent, type IttySocket } from './connect'
-
-const MAX_TIMEOUT = 250
+import { describe, expect, it, mock } from 'bun:test'
+import { connect, type IttySocket } from './connect'
 
 type Test = {
   name: string
   run?: (node: IttySocket) => void
   cases?: Test[]
 }
+
+const EXPOSED_METHODS = ['send', 'push', 'on', 'remove', 'close', 'open']
 
 describe('connect(id, options?)', () => {
   const getChannelID = () => 'itty:itty-sockets:test-' + Math.random().toString(36).slice(2)
@@ -18,9 +18,9 @@ describe('connect(id, options?)', () => {
       name: 'exposes methods',
       cases: [
         {
-          name: 'exposes .send, .push, .on, .close, .open',
+          name: `exposes methods: ${EXPOSED_METHODS.join(', ')}`,
           run: (channel: IttySocket) => {
-            for (const method of ['send', 'push', 'on', 'off', 'close', 'open']) {
+            for (const method of EXPOSED_METHODS) {
               expect(typeof channel[method]).toBe('function')
               expect(channel[method]()).toBe(channel)
             }
@@ -33,7 +33,7 @@ describe('connect(id, options?)', () => {
       cases: [
         {
           name: 'echo > sends messages back to sender',
-          run: () => new Promise<void>((resolve, reject) => {
+          run: () => new Promise<void>((resolve) => {
             const channel = connect(getChannelID(), { echo: true })
 
             channel.on('message', msg => {
@@ -46,7 +46,7 @@ describe('connect(id, options?)', () => {
         },
         {
           name: 'as > sets alias for messages',
-          run: () => new Promise<void>((resolve, reject) => {
+          run: () => new Promise<void>((resolve) => {
             const channel = connect(getChannelID(), { echo: true, as: 'test-user' })
 
             channel.on('message', msg => {
@@ -68,7 +68,7 @@ describe('connect(id, options?)', () => {
         },
         {
           name: 'opens the socket',
-          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
+          run: (channel: IttySocket) => new Promise<void>((resolve) => {
             channel.on('open', () => {
               expect(true).toBe(true)
               resolve()
@@ -87,7 +87,7 @@ describe('connect(id, options?)', () => {
         },
         {
           name: 'closes the socket',
-          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
+          run: (channel: IttySocket) => new Promise<void>((resolve) => {
             channel
               .on('close', () => {
                 expect(true).toBe(true)
@@ -106,7 +106,7 @@ describe('connect(id, options?)', () => {
       cases: [
         {
           name: 'registers an event listener that is called when the socket is opened',
-          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
+          run: (channel: IttySocket) => new Promise<void>((resolve) => {
             channel
               .on('open', () => {
                 expect(true).toBe(true)
@@ -117,7 +117,7 @@ describe('connect(id, options?)', () => {
         },
         {
           name: 'only multiple listeners',
-          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
+          run: (channel: IttySocket) => new Promise<void>((resolve) => {
             const spy1 = mock(() => {})
             const spy2 = mock(() => {
               expect(spy1).toHaveBeenCalled()
@@ -137,7 +137,7 @@ describe('connect(id, options?)', () => {
       cases: [
         {
           name: 'registers an event listener that is called when the socket is closed',
-          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
+          run: (channel: IttySocket) => new Promise<void>((resolve) => {
             const spy = mock(() => {})
 
             channel
@@ -152,7 +152,7 @@ describe('connect(id, options?)', () => {
         },
         {
           name: 'allows multiple listeners listeners',
-          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
+          run: (channel: IttySocket) => new Promise<void>((resolve) => {
             const spy1 = mock(() => {})
             const spy2 = mock(() => {})
             channel
@@ -174,9 +174,7 @@ describe('connect(id, options?)', () => {
       cases: [
         {
           name: 'registers an event listener that is called when a message is received',
-          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
-            const spy = mock(() => {})
-
+          run: (channel: IttySocket) => new Promise<void>((resolve) => {
             channel
               .on('message', e => {
                 expect(e.message).toBe('test')
@@ -188,7 +186,7 @@ describe('connect(id, options?)', () => {
         },
         {
           name: 'allows multiple message listeners',
-          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
+          run: (channel: IttySocket) => new Promise<void>((resolve) => {
             const spy1 = mock((e) => {})
             const spy2 = mock((e) => {
               expect(e.message).toBe('test')
@@ -210,9 +208,7 @@ describe('connect(id, options?)', () => {
       cases: [
         {
           name: 'registers an event listener that is called when a user (or self) joins the channel',
-          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
-            const spy = mock(() => {})
-
+          run: (channel: IttySocket) => new Promise<void>((resolve) => {
             channel
               .on('join', e => {
                 expect(e.users).toBe(1)
@@ -224,7 +220,7 @@ describe('connect(id, options?)', () => {
         },
         {
           name: 'does not include user details when { announce: true } is not set',
-          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
+          run: (channel: IttySocket) => new Promise<void>((resolve) => {
             channel = connect(getChannelID(), { alias: 'test-user' })
 
             channel
@@ -239,7 +235,7 @@ describe('connect(id, options?)', () => {
         },
         {
           name: 'includes a user details when the { announce: true } option is set',
-          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
+          run: (channel: IttySocket) => new Promise<void>((resolve) => {
             channel = connect(getChannelID(), { announce: true, alias: 'test-user' })
 
             channel
@@ -259,10 +255,10 @@ describe('connect(id, options?)', () => {
       cases: [
         {
           name: 'registers an event listener that is called when a user leaves the channel',
-          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
+          run: (channel: IttySocket) => new Promise<void>((resolve) => {
             const channelID = getChannelID()
-            const user1 = connect(channelID).push('test')
-            const user2 = connect(channelID).on('leave', (e) => {
+            connect(channelID).push('test')
+            connect(channelID).on('leave', (e) => {
               expect(e.users).toBe(1)
               channel.close()
               resolve()
@@ -271,13 +267,13 @@ describe('connect(id, options?)', () => {
         },
         {
           name: 'does not include user details when { announce: true } is not set',
-          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
+          run: (channel: IttySocket) => new Promise<void>((resolve) => {
             const channelID = getChannelID()
             const user1 = connect(channelID)
               .on('join', ({ users }) => {
                 if (users === 2) user1.close()
               })
-            const user2 = connect(channelID).on('leave', (e) => {
+            connect(channelID).on('leave', (e) => {
               expect(e.users).toBe(1)
               expect(e.uid).toBeUndefined()
               expect(e.alias).toBeUndefined()
@@ -288,10 +284,10 @@ describe('connect(id, options?)', () => {
         },
         {
           name: 'includes a user details when the { announce: true } option is set',
-          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
+          run: (channel: IttySocket) => new Promise<void>((resolve) => {
             const channelID = getChannelID()
-            const user1 = connect(channelID, { announce: true, alias: 'test-user' }).push('test')
-            const user2 = connect(channelID).on('leave', (e) => {
+            connect(channelID, { announce: true, alias: 'test-user' }).push('test')
+            connect(channelID).on('leave', (e) => {
               expect(e.users).toBe(1)
               expect(e.uid).not.toBeUndefined()
               expect(e.alias).toBe('test-user')
@@ -300,6 +296,26 @@ describe('connect(id, options?)', () => {
             })
           })
         },
+      ]
+    },
+    {
+      name: `.remove('event-type', listener)`,
+      cases: [
+        {
+          name: 'removes a listener (will not fire)',
+          run: (channel: IttySocket) => new Promise<void>((resolve) => {
+            const spy = mock(() => {})
+
+            channel
+              .on('open', spy)
+              .on('open', () => {
+                expect(spy).not.toHaveBeenCalled()
+                resolve()
+              })
+              .remove('open', spy)
+              .open()
+          })
+        }
       ]
     },
     {
@@ -313,13 +329,12 @@ describe('connect(id, options?)', () => {
         }
       ]
     },
-
     {
       name: 'message handling',
       cases: [
         {
           name: 'MessageEvent > includes expected fields',
-          run: () => new Promise<void>((resolve, reject) => {
+          run: () => new Promise<void>((resolve) => {
             const channel = setup()
 
             channel.on('message', msg => {
@@ -334,7 +349,7 @@ describe('connect(id, options?)', () => {
         },
         {
           name: 'sending a message to a recipient that does NOT exist will return an error',
-          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
+          run: (channel: IttySocket) => new Promise<void>((resolve) => {
             const recipient = 'user-' + Math.random().toString(36).slice(2)
             const message = 'private-message'
 
@@ -349,13 +364,12 @@ describe('connect(id, options?)', () => {
         },
         {
           name: 'sending a message to a recipient that DOES exist will privately send the message',
-          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
+          run: () => new Promise<void>((resolve) => {
             let privateMessageIntercepted = false
-            const spy = mock((e) => e.message)
             const channelID = getChannelID()
             const user1 = connect(channelID)
             const user2 = connect(channelID)
-            const user3 = connect(channelID).on('message', e => {
+            connect(channelID).on('message', e => {
               if (e.message === 'private') {
                 privateMessageIntercepted = true
               }
@@ -397,8 +411,8 @@ describe('connect(id, options?)', () => {
       name: 'message queueing',
       cases: [
         {
-          name: 'processes queued messages in order',
-          run: (channel: IttySocket) => new Promise<void>((resolve, reject) => {
+          name: 'processes queued messages in order upon connection',
+          run: (channel: IttySocket) => new Promise<void>((resolve) => {
             const messages = ['first', 'second', 'third']
             const received: any[] = []
 
@@ -421,24 +435,14 @@ describe('connect(id, options?)', () => {
       cases: [
         {
           name: 'sends message and closes immediately',
-          run: async () => {
-            const cid = getChannelID()
-            const channel = connect(cid)
-            const receiver = connect(cid)
-            const message = 'push-test'
-
-            return new Promise<void>((resolve, reject) => {
-              const channel = connect(cid)
-              const onClose = mock(() => {})
-
-              channel
+          run: async () => new Promise<void>((resolve) => {
+            connect(getChannelID())
                 .on('close', () => {
                   expect(true).toBe(true)
                   resolve()
                 })
                 .push('test')
-            })
-          }
+          })
         }
       ]
     },
