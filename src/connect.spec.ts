@@ -98,6 +98,22 @@ describe('connect(id, options?)', () => {
               })
               .open()
           })
+        },
+        {
+          name: 'calling multiple times is fine',
+          run: (channel: IttySocket) => new Promise<void>((resolve) => {
+            channel
+              .on('close', () => {
+                expect(true).toBe(true)
+                resolve()
+              })
+              .on('open', () => {
+                channel
+                  .close()
+                  .close()
+              })
+              .open()
+          })
         }
       ]
     },
@@ -330,6 +346,22 @@ describe('connect(id, options?)', () => {
       ]
     },
     {
+      name: '.push(message, recipient?)',
+      cases: [
+        {
+          name: 'sends message and closes immediately',
+          run: async () => new Promise<void>((resolve) => {
+            connect(getChannelID())
+                .on('close', () => {
+                  expect(true).toBe(true)
+                  resolve()
+                })
+                .push('test')
+          })
+        }
+      ]
+    },
+    {
       name: 'message handling',
       cases: [
         {
@@ -404,12 +436,7 @@ describe('connect(id, options?)', () => {
               })
               .send('test') // trigger the echo
           })
-        }
-      ]
-    },
-    {
-      name: 'message queueing',
-      cases: [
+        },
         {
           name: 'processes queued messages in order upon connection',
           run: (channel: IttySocket) => new Promise<void>((resolve) => {
@@ -426,22 +453,6 @@ describe('connect(id, options?)', () => {
             })
 
             messages.forEach(msg => channel.send(msg))
-          })
-        }
-      ]
-    },
-    {
-      name: 'push behavior',
-      cases: [
-        {
-          name: 'sends message and closes immediately',
-          run: async () => new Promise<void>((resolve) => {
-            connect(getChannelID())
-                .on('close', () => {
-                  expect(true).toBe(true)
-                  resolve()
-                })
-                .push('test')
           })
         }
       ]

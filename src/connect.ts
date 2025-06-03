@@ -71,7 +71,7 @@ export const connect = (channelId: string, options: IttySocketOptions = {}): Itt
       for (let listener of events.open ?? [])
         listener()
       // @ts-ignore
-      if (closeAfterSend) ws.close()
+      if (closeAfterSend) ws?.close()
     }
 
     ws.onmessage = (
