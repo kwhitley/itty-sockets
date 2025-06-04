@@ -70,7 +70,6 @@ export const connect = (channelId: string, options: IttySocketOptions = {}): Itt
       while (queue.length) ws?.send(queue.shift()!)
       for (let listener of events.open ?? [])
         listener()
-      // @ts-ignore
       if (closeAfterSend) ws?.close()
     }
 
@@ -93,7 +92,7 @@ export const connect = (channelId: string, options: IttySocketOptions = {}): Itt
     return socket
   }
 
-  // @ts-ignore
+  // @ts-ignore - dark itty magic
   const socket = new Proxy(open, {
     get: (_, key: string) =>
       ({
