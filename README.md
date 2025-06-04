@@ -20,7 +20,10 @@ Tiny realtime messaging client in under 500 bytes.  **No backend needed.**
 
 ## What does this solve?
 
-Itty Sockets simplifies sending/receiving realtime data between parties.  For example, sending commands from one application to be received by another... streaming status updates... or maybe even just pushing interaction events to a user's channel when you're on their page (and when they're connected, they can just be listening to their own channel for incoming notifications).
+Itty Sockets simplifies sending/receiving realtime data.
+
+By pairing an ultra-tiny client (this) with the public **[ittysockets.io](https://ittysockets.io)** backend, you 
+can focus on sending/receiving messages, instead of building a transport layer.
 
 The idea is simple:
 
@@ -47,10 +50,9 @@ foo
 
 ### Important Considerations
 
-1. **There is no history/replay/storage.**  It's a live stream only.  This is [intentional](#privacy).
+1. **There is no history/replay/storage.**  It's a live stream only. 
 2. **We don't authenticate.**  [ittysockets.io](https://ittysockets.io) leverages security through obfuscation (a near-infinite number of channel names).  Choose a more unique channel for more privacy.  Need more?  Consider encrypting/decrypting your payloads before transmission (this is easy).
 3. **There are no guarantees of delivery.**  While [ittysockets.io](https://ittysockets.io) is *extremely* stable, it's a free public service that is provided without any guarantees of delivery or uptime.  Manage risk accordingly.
-4. **Privacy.**  [ittysockets.io](https://ittysockets.io) does not store (or even log) any messages or data, period. It's cheaper for us that way, and safer for you.
 
 <br />
 
@@ -192,5 +194,16 @@ type MessageEvent = {
   message: any    // the message payload
 }
 ```
+
+<br />
+
+# Privacy
+[ittysockets.io](https://ittysockets.io) is a free, public-use, but _private_ service.
+
+It was designed by me (a developer), to help myself and other developers achieve cool things.  As such:
+
+1. Your messages are never transmitted to anything other than the sockets on the channel you're connected to.  No third-party service, no loggers, no storage (local or otherwise), not even a collection in memory. This protects your privacy/data, but keeps my costs to virtually zero, allowing me to share this service with the world... hopefully indefinitely.
+
+2. I ask that you please use the channels responsibly.  We're all sharing this space!
 
 
