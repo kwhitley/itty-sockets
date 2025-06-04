@@ -91,12 +91,12 @@ const channel = connect('my-channels/my-super-secret-channel', {
 
 #### Connection Options
 
-| option | description | default | example |
-| --- | --- | --- | --- |
-| **as** | An optional display name for the connection. | `undefined` | `{ as: 'Kevin' }` |
-| **alias** | An optional display name for the connection. | `undefined` | `{ alias: 'Kevin' }` |
-| **announce** | Shares your uid/alias when joining/leaving. | `false` | `{ announce: true }` |
-| **echo** | Echos messages back to original sender (good for testing). | `false` | `{ echo: true }` |
+| option | default value | description | 
+| --- | --- | --- |
+| `{ alias: 'any-string' }` | `undefined` | An optional display name to be included in your messages. |
+| `{ as: 'any-string' }` | `undefined` | An optional display name to be included in your message (same as alias). | 
+| `{ announce: true }` | `false` | Shares your uid/alias when joining/leaving. | `false` |
+| `{ echo: true }` | `false` | Echos messages back to original sender (good for testing). |
 
 <br />
 
@@ -105,7 +105,7 @@ With the channel connected, simply call methods on it.  Every method is chainabl
 
 | method | description | example |
 | --- | --- | --- |
-| **`.open()`** | Opens/re-opens the connection (manually, usually not needed). | `channel.open()` |
+| **`.open()`** | Opens/re-opens the connection (manually, usually not needed). |
 | **`.close()`** | Closes the connection. | `channel.close()` |
 | **`.send(message: any)`** | Sends a message to the channel.  This can be anything serializable with JSON.stringify. | `channel.send({ type: 'chat', text: 'hello' })` |
 | **`.push(message: any)`** | Sends a message and immediately closes the connection. | `channel.push('Hello World!')` |
