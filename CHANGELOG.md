@@ -1,5 +1,8 @@
 ## Changelog
 
+#### v0.3.1
+- fixes: module export
+- removes extra NPM files
 #### v0.3.0
 - breaking: every event has multiple listeners (previously only on('message') allowed multiple)
 - added: join/leave/error event types
