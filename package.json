@@ -1,10 +1,10 @@
 {
   "name": "itty-sockets",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Tiny realtime messaging client in under 450 bytes.  No backend needed.",
-  "main": "./sockets.js",
-  "module": "./sockets.mjs",
-  "types": "./sockets.d.ts",
+  "main": "./connect.js",
+  "module": "./connect.mjs",
+  "types": "./connect.d.ts",
   "scripts": {
     "dev": "bun test --watch",
     "lint": "bun eslint src",
@@ -50,11 +50,6 @@
     "yarn-release": "^1.10.6"
   },
   "exports": {
-    ".": {
-      "import": "./index.mjs",
-      "require": "./index.js",
-      "types": "./index.d.ts"
-    },
     "./connect": {
       "import": "./connect.mjs",
       "require": "./connect.js",

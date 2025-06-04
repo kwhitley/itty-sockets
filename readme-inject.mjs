@@ -7,8 +7,8 @@ const transformCode = code => code
 const snippet = fs.readFileSync('dist/connect.snippet.js', 'utf-8')
 const transformed = transformCode(snippet).trim()
 
-// Write transformed code to both files
-fs.writeFileSync('dist/connect.snippet.js', transformed)
+// remove snippet file
+fs.unlinkSync('dist/connect.snippet.js', transformed)
 
 const readme = fs.readFileSync('README.md', 'utf-8')
 const newReadme = readme.replace(
