@@ -43,6 +43,7 @@ pkg.files = files.reduce((acc, file) => {
 
 // write updated package.json
 await fs.writeJSON('./package.json', pkg, { spaces: 2 })
+await fs.writeFile('./dist/.npmignore', 'README.md')
 
 export default async () => {
   console.log(files.map(f => f.path))
