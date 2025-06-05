@@ -30,6 +30,17 @@ pkg.exports = files.reduce((acc, file) => {
   return acc
 }, {})
 
+pkg.files = files.reduce((acc, file) => {
+  acc = [
+    ...acc,
+    file.esm.replace('/dist', '').replace(/^\.\//, ''),
+    file.cjs.replace('/dist', '').replace(/^\.\//, ''),
+    file.types.replace('/dist', '').replace(/^\.\//, ''),
+  ]
+
+  return acc
+}, ['LICENSE'])
+
 // write updated package.json
 await fs.writeJSON('./package.json', pkg, { spaces: 2 })
 
