@@ -50,6 +50,7 @@ type EventListeners = {
 export type IttySocketOptions = {
   as?: string,
   alias?: string,
+  base?: string,
   echo?: true,
   announce?: true,
 }
@@ -64,7 +65,7 @@ export const connect = (channelId: string, options: IttySocketOptions = {}): Itt
     if (ws) return socket// Don't reconnect if already opening/open
 
     // @ts-ignore - options will be cast as string regardless of what is passed
-    ws = new WebSocket(`wss://ittysockets.io/r/${channelId}?${new URLSearchParams(options)}`)
+    ws = new WebSocket(`${options.base ?? 'wss://ittysockets.io/r'}/${channelId}?${new URLSearchParams(options)}`)
 
     ws.onopen = () => {
       while (queue.length) ws?.send(queue.shift()!)
