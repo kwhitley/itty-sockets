@@ -22,7 +22,7 @@ Tiny realtime messaging client in under 500 bytes.  **No backend needed.**
 
 Itty Sockets simplifies sending/receiving realtime data.
 
-By pairing an ultra-tiny client (this) with the public **[ittysockets.io](https://ittysockets.io)** backend, you 
+By pairing an ultra-tiny client (this) with the public **[ittysockets.io](https://ittysockets.io)** backend, you
 can focus on sending/receiving messages, instead of building a transport layer.
 
 The idea is simple:
@@ -50,7 +50,7 @@ foo
 
 ### Important Considerations
 
-1. **There is no history/replay/storage.**  It's a live stream only. 
+1. **There is no history/replay/storage.**  It's a live stream only.
 2. **We don't authenticate.**  [ittysockets.io](https://ittysockets.io) leverages security through obfuscation (a near-infinite number of channel names).  Choose a more unique channel for more privacy.  Need more?  Consider encrypting/decrypting your payloads before transmission (this is easy).
 3. **There are no guarantees of delivery.**  While [ittysockets.io](https://ittysockets.io) is *extremely* stable, it's a free public service that is provided without any guarantees of delivery or uptime.  Manage risk accordingly.
 
@@ -91,11 +91,12 @@ const channel = connect('my-channels/my-super-secret-channel', {
 
 #### Connection Options
 
-| option | default value | description | 
+| option | default value | description |
 | --- | --- | --- |
 | `{ alias: 'any-string' }` | `undefined` | An optional display name to be included in your messages. |
-| `{ as: 'any-string' }` | `undefined` | An optional display name to be included in your message (same as alias). | 
-| `{ announce: true }` | `false` | Shares your uid/alias when joining/leaving. | `false` |
+| `{ as: 'any-string' }` | `undefined` | An optional display name to be included in your message (same as alias). |
+| `{ announce: true }` | `false` | Shares your uid/alias when joining/leaving. |
+| `{ base: string }` | `undefined` | Define your own server url (requires API compatibility). |
 | `{ echo: true }` | `false` | Echos messages back to original sender (good for testing). |
 
 <br />
