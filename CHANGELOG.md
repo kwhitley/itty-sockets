@@ -1,5 +1,7 @@
 ## Changelog
 
+#### v0.4.0
+- added: base (url) option
 #### v0.3.1
 - fixes: module export
 - removes extra NPM files
