@@ -22,7 +22,7 @@ Tiny realtime messaging client in under 500 bytes.  **No backend needed.**
 
 Itty Sockets simplifies sending/receiving realtime data.
 
-By pairing an ultra-tiny client (this) with the public **[ittysockets.io](https://ittysockets.io)** backend, you 
+By pairing an ultra-tiny client (this) with the public **[ittysockets.io](https://ittysockets.io)** backend, you
 can focus on sending/receiving messages, instead of building a transport layer.
 
 The idea is simple:
@@ -50,7 +50,7 @@ foo
 
 ### Important Considerations
 
-1. **There is no history/replay/storage.**  It's a live stream only. 
+1. **There is no history/replay/storage.**  It's a live stream only.
 2. **We don't authenticate.**  [ittysockets.io](https://ittysockets.io) leverages security through obfuscation (a near-infinite number of channel names).  Choose a more unique channel for more privacy.  Need more?  Consider encrypting/decrypting your payloads before transmission (this is easy).
 3. **There are no guarantees of delivery.**  While [ittysockets.io](https://ittysockets.io) is *extremely* stable, it's a free public service that is provided without any guarantees of delivery or uptime.  Manage risk accordingly.
 
@@ -66,7 +66,7 @@ import { connect } from 'itty-sockets'
 ...or simply paste this into your environment/console:
 <!-- BEGIN SNIPPET -->
 ```ts
-let connect=(e,o={})=>{let s,t=[],n=0,r={},a=()=>(s||(s=new WebSocket(`wss://ittysockets.io/r/${e}?${new URLSearchParams(o)}`),s.onopen=()=>{for(;t.length;)s?.send(t.shift());for(let e of r.open??[])e();n&&s?.close()},s.onmessage=(e,o=JSON.parse(e.data))=>{for(let e of r[o.type??"message"]??[])e({...o,date:new Date(o.date)})},s.onclose=()=>{n=0,s=null;for(let e of r.close??[])e()}),l);const l=new Proxy(a,{get:(e,o)=>({open:a,close:()=>(1==s?.readyState?s.close():n=1,l),send:(e,o)=>(e=JSON.stringify(e),e=o?`@@${o}@@${e}`:e,1==s?.readyState?(s.send(e),l):(t.push(e),a())),push:(e,o)=>(n=1,l.send(e,o)),on:(e,o)=>((r[e]??=[]).push(o),a()),remove:(e,o,s=r[e],t=s?.indexOf(o)??-1)=>(~t&&s?.splice(t,1),a())}[o])});return l};
+let connect=(e,s={})=>{let o,t=[],n=0,a={},r=()=>(o||(o=new WebSocket(`${s.base??"wss://ittysockets.io/r"}/${e}?${new URLSearchParams(s)}`),o.onopen=()=>{for(;t.length;)o?.send(t.shift());for(let e of a.open??[])e();n&&o?.close()},o.onmessage=(e,s=JSON.parse(e.data))=>{for(let e of a[s.type??"message"]??[])e({...s,date:new Date(s.date)})},o.onclose=()=>{n=0,o=null;for(let e of a.close??[])e()}),l);const l=new Proxy(r,{get:(e,s)=>({open:r,close:()=>(1==o?.readyState?o.close():n=1,l),send:(e,s)=>(e=JSON.stringify(e),e=s?`@@${s}@@${e}`:e,1==o?.readyState?(o.send(e),l):(t.push(e),r())),push:(e,s)=>(n=1,l.send(e,s)),on:(e,s)=>((a[e]??=[]).push(s),r()),remove:(e,s,o=a[e],t=o?.indexOf(s)??-1)=>(~t&&o?.splice(t,1),r())}[s])});return l};
 ```
 <!-- END SNIPPET -->
 
@@ -91,11 +91,12 @@ const channel = connect('my-channels/my-super-secret-channel', {
 
 #### Connection Options
 
-| option | default value | description | 
+| option | default value | description |
 | --- | --- | --- |
 | `{ alias: 'any-string' }` | `undefined` | An optional display name to be included in your messages. |
-| `{ as: 'any-string' }` | `undefined` | An optional display name to be included in your message (same as alias). | 
-| `{ announce: true }` | `false` | Shares your uid/alias when joining/leaving. | `false` |
+| `{ as: 'any-string' }` | `undefined` | An optional display name to be included in your message (same as alias). |
+| `{ announce: true }` | `false` | Shares your uid/alias when joining/leaving. |
+| `{ base: string }` | `undefined` | Define your own server url (requires API compatibility). |
 | `{ echo: true }` | `false` | Echos messages back to original sender (good for testing). |
 
 <br />
