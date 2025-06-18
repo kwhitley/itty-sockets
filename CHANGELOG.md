@@ -1,5 +1,8 @@
 ## Changelog
+CAUTION: Pre v1.0.0, this should be considered an alpha release, with minor updates allowing for breaking changes to the interface.
 
+#### v0.5.0
+- BREAKING: removed base (url) option - instead, simply pass a full wss:// path as the channelId to use an external compatible server.
 #### v0.4.0
 - added: base (url) option
 #### v0.3.1
