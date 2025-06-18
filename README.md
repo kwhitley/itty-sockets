@@ -66,7 +66,7 @@ import { connect } from 'itty-sockets'
 ...or simply paste this into your environment/console:
 <!-- BEGIN SNIPPET -->
 ```ts
-let connect=(e="",s={})=>{let o,t=[],n=0,r={},a=()=>(o||(o=new WebSocket(/^(wss?):/.test(e)?e:`wss://ittysockets.io/r/${e}?`+new URLSearchParams(s)),o.onopen=()=>{for(;t.length;)o?.send(t.shift());for(let e of r.open??[])e();n&&o?.close()},o.onmessage=(e,s=JSON.parse(e.data))=>{for(let e of r[s.type??"message"]??[])e({...s,date:new Date(s.date)})},o.onclose=()=>{n=0,o=null;for(let e of r.close??[])e()}),l);const l=new Proxy(a,{get:(e,s)=>({open:a,close:()=>(1==o?.readyState?o.close():n=1,l),send:(e,s)=>(e=JSON.stringify(e),e=s?`@@${s}@@${e}`:e,1==o?.readyState?(o.send(e),l):(t.push(e),a())),push:(e,s)=>(n=1,l.send(e,s)),on:(e,s)=>((r[e]??=[]).push(s),a()),remove:(e,s,o=r[e],t=o?.indexOf(s)??-1)=>(~t&&o?.splice(t,1),a())}[s])});return l};
+let connect=(e,s={})=>{let o,t=[],n=0,a={},r=()=>(o||(o=new WebSocket(/^(wss?):/.test(e)?e:`wss://ittysockets.io/c/${e}?`+new URLSearchParams(s)),o.onopen=()=>{for(;t.length;)o?.send(t.shift());for(let e of a.open??[])e();n&&o?.close()},o.onmessage=(e,s=JSON.parse(e.data))=>{for(let e of a[s.type??"message"]??[])e({...s,date:new Date(s.date)})},o.onclose=()=>{n=0,o=null;for(let e of a.close??[])e()}),l);const l=new Proxy(r,{get:(e,s)=>({open:r,close:()=>(1==o?.readyState?o.close():n=1,l),send:(e,s)=>(e=JSON.stringify(e),e=s?`@@${s}@@${e}`:e,1==o?.readyState?(o.send(e),l):(t.push(e),r())),push:(e,s)=>(n=1,l.send(e,s)),on:(e,s)=>((a[e]??=[]).push(s),r()),remove:(e,s,o=a[e],t=o?.indexOf(s)??-1)=>(~t&&o?.splice(t,1),r())}[s])});return l};
 ```
 <!-- END SNIPPET -->
 
