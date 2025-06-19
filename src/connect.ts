@@ -92,7 +92,7 @@ export const connect = (channelId: string, options: IttySocketOptions = {}): Itt
         open,
         send: (message: any, recipient?: string) => (
           message = JSON.stringify(message),
-          message = recipient ? "@@" + recipient + "@@" + message : message,
+          message = recipient ? '@@' + recipient + '@@' + message : message,
           ws?.readyState == 1 ? (ws.send(message), socket) : (queue.push(message), open())
         ),
         push: (message: any, recipient?: string) => (closeAfterSend = 1, socket.send(message, recipient)),
