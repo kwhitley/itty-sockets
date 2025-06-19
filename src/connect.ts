@@ -55,21 +55,21 @@ export type IttySocketOptions = {
 }
 
 export const connect = (channelId: string, options: IttySocketOptions = {}): IttySocket => {
-  let ws: WebSocket | null,
-    queue: string[] = [],
-    closeAfterSend: number = 0,
-    events: EventListeners = {}
-
-  let open = () => {
-    if (ws) return socket// Don't reconnect if already opening/open
+  let closeAfterSend = 0, ws: WebSocket | null, queue: string[] = [], events: EventListeners = {}, open = () => {
+    if (ws) return socket//Don't reconnect if already opening/open
 
     // @ts-ignore - options will be cast as string regardless of what is passed
-    ws = new WebSocket(/^(wss?):/.test(channelId) ? channelId : `wss://ittysockets.io/c/${channelId}` + '?' + new URLSearchParams(options))
+    ws = new WebSocket(/^wss?:/.test(channelId) ? channelId : 'wss://ittysockets.io/c/' + channelId + '?' + new URLSearchParams(options))
+
+    ws.onclose = () => {
+      closeAfterSend = 0
+      ws = null
+      for (let listener of events.close ?? []) listener()
+    }
 
     ws.onopen = () => {
       while (queue.length) ws?.send(queue.shift()!)
-      for (let listener of events.open ?? [])
-        listener()
+      for (let listener of events.open ?? []) listener()
       if (closeAfterSend) ws?.close()
     }
 
@@ -78,15 +78,7 @@ export const connect = (channelId: string, options: IttySocketOptions = {}): Itt
       parsed = JSON.parse(event.data),
     ) => {
       // @ts-ignore
-      for (let listener of events[parsed.type ?? 'message'] ?? [])
-        listener({ ...parsed, date: new Date(parsed.date) })
-    }
-
-    ws.onclose = () => {
-      closeAfterSend = 0
-      ws = null
-      for (let listener of events.close ?? [])
-        listener()
+      for (let listener of events[parsed.type ?? 'message'] ?? []) listener({ ...parsed, date: new Date(parsed.date) })
     }
 
     return socket
@@ -96,29 +88,24 @@ export const connect = (channelId: string, options: IttySocketOptions = {}): Itt
   const socket = new Proxy(open, {
     get: (_, key: string) =>
       ({
+        close: () => (ws?.readyState == 1 ? ws.close() : closeAfterSend = 1, socket),
         open,
-        close: () => (ws?.readyState == 1 ? ws.close() : (closeAfterSend = 1), socket),
-        send: (message: any, recipient?: string) => {
-          message = JSON.stringify(message)
-          message = recipient ? `@@${recipient}@@${message}` : message
-          if (ws?.readyState == 1) return (ws.send(message), socket)
-          queue.push(message)
-          return open()
-        },
+        send: (message: any, recipient?: string) => (
+          message = JSON.stringify(message),
+          message = recipient ? '@@' + recipient + '@@' + message : message,
+          ws?.readyState == 1 ? (ws.send(message), socket) : (queue.push(message), open())
+        ),
         push: (message: any, recipient?: string) => (closeAfterSend = 1, socket.send(message, recipient)),
-        on: (type: IttySocketEvent, listener: () => any) => {
-          (events[type] ??= []).push(listener)
-          return open()
-        },
+        on: (type: IttySocketEvent, listener: () => any) => (
+          (events[type] ??= []).push(listener),
+          open()
+        ),
         remove: (
           type: IttySocketEvent,
           listener: () => any,
           listeners = events[type],
           i = listeners?.indexOf(listener) ?? -1
-        ) => (
-          ~i && listeners?.splice(i, 1),
-          open()
-        ),
+        ) => (~i && listeners?.splice(i, 1), open()),
       })[key]
   }) as IttySocket
 
