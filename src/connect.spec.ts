@@ -22,6 +22,25 @@ const tests: TestTree = {
     },
   },
   'connect(id, options?)': {
+    'constructs correct WebSocket URL': () => {
+      const originalWebSocket = global.WebSocket
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const mockFn = mock((url: string) => ({}))
+
+      // @ts-ignore
+      global.WebSocket = mockFn
+
+      connect('my-channel', { a: 'b', c: 'd' } as any).open()
+      expect(mockFn.mock.calls[0][0]).toBe('wss://ittysockets.io/c/my-channel?a=b&c=d')
+
+      connect('ws://custom.server/path').open()
+      expect(mockFn.mock.calls[1][0]).toBe('ws://custom.server/path?')
+
+      connect('ws://custom.server/path', { echo: true, alias: 'test-user' }).open()
+      expect(mockFn.mock.calls[2][0]).toBe('ws://custom.server/path?echo=true&alias=test-user')
+
+      global.WebSocket = originalWebSocket
+    },
     'exposes chainable method': EXPOSED_METHODS.reduce((acc, method) => {
         acc[`.${method}()`] = ({ channel }) => {
           expect(typeof channel[method]).toBe('function')

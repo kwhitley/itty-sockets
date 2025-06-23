@@ -1,6 +1,6 @@
 {
   "name": "itty-sockets",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Tiny realtime messaging client in under 450 bytes.  No backend needed.",
   "type": "module",
   "exports": {

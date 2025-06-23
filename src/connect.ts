@@ -59,7 +59,7 @@ export const connect = (channelId: string, options: IttySocketOptions = {}): Itt
     if (ws) return socket//Don't reconnect if already opening/open
 
     // @ts-ignore - options will be cast as string regardless of what is passed
-    ws = new WebSocket(/^wss?:/.test(channelId) ? channelId : 'wss://ittysockets.io/c/' + channelId + '?' + new URLSearchParams(options))
+    ws = new WebSocket((/^wss?:/.test(channelId) ? channelId : 'wss://ittysockets.io/c/' + channelId) + '?' + new URLSearchParams(options))
 
     ws.onclose = () => {
       closeAfterSend = 0
