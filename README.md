@@ -16,199 +16,144 @@
 
 ---
 
-Tiny realtime messaging client in under 500 bytes.  **No backend needed.**
+WebSockets are powerful, but the native API has rough edges:
+1. We always have to stringify/parse payloads (not a big deal)
+1. We can't send until it's open (still not a huge deal...)
+1. We lose all our listeners if we close/reconnect (oof. let's write a factory!)
 
-## What does this solve?
+## We currently do things like this (raw WebSocket)
+```js
+const ws = new WebSocket('ws://localhost:8080');
+let reconnect // we'll need this later
 
-Itty Sockets simplifies sending/receiving realtime data.
+ws.onopen = () => {
+  // Can only send messages after connection opens
+  ws.send(JSON.stringify({ hello: 'world' }));
 
-By pairing an ultra-tiny client (this) with the public **[ittysockets.io](https://ittysockets.io)** backend, you
-can focus on sending/receiving messages, instead of building a transport layer.
+  // let's clear any reconnect interval
+  clearInterval(reconnect)
+};
 
-The idea is simple:
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data); // Manual parsing
+  console.log('Received:', data);
+};
 
-1. One or more parties connect to a channel (by name).
-2. They send/receive messages (this can be anything) in the channel.
-3. That's it!
+ws.onclose = () => {
 
-# Example
-```ts
+  // if it closes, we have to create a new WebSocket, and re-bind all the above events... including this one
+  reconnect = setInterval(() => {
+    ws = new WebSocket('ws://localhost:8080');
+
+    // Now we have to rebind all the event handlers to the new WebSocket instance!
+    // Time to build factory/class to handle that for us...
+  }, 1000);
+};
+```
+
+## itty-sockets lets us do this:
+```js
+// itty-sockets
+import { connect } from 'itty-sockets' // ~500 bytes
+
+const client = connect('ws://localhost:8080')
+  .on('message', console.log) // already parsed
+  .send({ hello: 'world!' }) // will stringify and send when connected
+
+// to handle reconnects, we can spam reconnect attempts - these will be ignored if still open
+// we also don't have to reconnect any listeners, they get automatically re-applied
+setInterval(client.open, 1000)
+```
+
+## What itty-sockets handles for you
+
+- **Race conditions** - Works reliably in any connection state
+- **JSON** - Messages are automatically stringified/parsed
+- **Persistent event listeners** - Events survive reconnections
+
+
+> QUESTION: Will it save the ~500 bytes it cost?
+>
+> ANSWER: In most cases, _**yes.**_  In our tests, a factory function to provide the basic safety around WebSockets, without any fluff/messaging, was around 800 bytes (minified+gzipped).
+
+
+## Quick Start
+
+```bash
+npm install itty-sockets
+```
+
+### Connect to your WebSocket server
+
+```js
 import { connect } from 'itty-sockets'
 
-// connect to a channel
-const foo = connect('my-secret-room-name')
+const client = connect('ws://localhost:8080')
+  .on('message', (event) => {
+    // event.message contains your data (auto-parsed from JSON)
+    console.log('Got:', event.message);
+  })
+  .on('open', () => console.log('Connected!'))
+  .on('close', () => console.log('Disconnected'));
 
-foo
-  // we can listen for messages
-  .on('message', e => console.log(e.message))
-
-  // and/or send some
-  .send('Hello World!')     // "Hello World!"
-  .send([1, 2, 3])          // [1, 2, 3]
-  .send({ foo: 'bar' })     // { foo: "bar" }
+// Send data (auto-stringified to JSON)
+client.send({ type: 'chat', text: 'Hello!' });
+client.send([1, 2, 3]);
+client.send('Simple string');
 ```
 
-### Important Considerations
+### Custom reconnection
 
-1. **There is no history/replay/storage.**  It's a live stream only.
-2. **We don't authenticate.**  [ittysockets.io](https://ittysockets.io) leverages security through obfuscation (a near-infinite number of channel names).  Choose a more unique channel for more privacy.  Need more?  Consider encrypting/decrypting your payloads before transmission (this is easy).
-3. **There are no guarantees of delivery.**  While [ittysockets.io](https://ittysockets.io) is *extremely* stable, it's a free public service that is provided without any guarantees of delivery or uptime.  Manage risk accordingly.
-
-<br />
-
-# Getting Started
-
-### 1. Import the [tiny client](https://npmjs.com/package/itty-sockets).
-```ts
-import { connect } from 'itty-sockets'
+```js
+const client = connect('ws://localhost:8080')
+  .on('close', () => {
+    console.log('Lost connection, reconnecting in 1 second...');
+    setTimeout(() => client.open(), 1000);
+  });
 ```
 
-...or simply paste this into your environment/console:
-<!-- BEGIN SNIPPET -->
-```ts
-let connect=(e,s={})=>{let o,t=0,n=[],a={},r=()=>(o||(o=new WebSocket((/^wss?:/.test(e)?e:"wss://ittysockets.io/c/"+e)+"?"+new URLSearchParams(s)),o.onclose=()=>{t=0,o=null;for(let e of a.close??[])e()},o.onopen=()=>{for(;n.length;)o?.send(n.shift());for(let e of a.open??[])e();t&&o?.close()},o.onmessage=(e,s=JSON.parse(e.data))=>{for(let e of a[s.type??"message"]??[])e({...s,date:new Date(s.date)})}),l);const l=new Proxy(r,{get:(e,s)=>({close:()=>(1==o?.readyState?o.close():t=1,l),open:r,send:(e,s)=>(e=JSON.stringify(e),e=s?"@@"+s+"@@"+e:e,1==o?.readyState?(o.send(e),l):(n.push(e),r())),push:(e,s)=>(t=1,l.send(e,s)),on:(e,s)=>((a[e]??=[]).push(s),r()),remove:(e,s,o=a[e],t=o?.indexOf(s)??-1)=>(~t&&o?.splice(t,1),r())}[s])});return l};
-```
-<!-- END SNIPPET -->
+### Works everywhere
 
-<br />
+```js
+// Your own WebSocket server
+connect('ws://localhost:8080')
 
-### 2. Connect to a Channel (or external server)
-To start, simply connect to a channel based on a unique name (this can be anything).
+// Secure WebSocket
+connect('wss://api.example.com/ws')
 
-> **NOTE:** Pass a valid `ws://` or `wss://` URL as the channel identifier to bypass the public [ittysockets.io](https://ittysockets.io) service and use your own.
-
-```ts
-import { connect } from 'itty-sockets'
-
-// basic connection
-const channel = connect('my-channels/my-super-secret-channel')
-
-// with options
-const channel = connect('my-channels/my-super-secret-channel', {
-                  as: 'Kevin',
-                  announce: true,
-                  echo: true
-                })
-
-// an external server
-const channel = connect('wss://somewhere.else/entirely')
+// Or use the free ittysockets.io service for quick prototyping
+connect('my-channel-name') // Connects to hosted service
 ```
 
-#### Connection Options
+## API Reference
 
-| option | default value | description |
+| Method | Description | Example |
 | --- | --- | --- |
-| `{ alias: 'any-string' }` | `undefined` | An optional display name to be included in your messages. |
-| `{ as: 'any-string' }` | `undefined` | An optional display name to be included in your message (same as alias). |
-| `{ announce: true }` | `false` | Shares your uid/alias when joining/leaving. |
-| `{ echo: true }` | `false` | Echos messages back to original sender (good for testing). |
+| `connect(url)` | Create a connection to WebSocket server | `connect('ws://localhost:8080')` |
+| `.send(data)` | Send data (auto-serialized to JSON) | `client.send({ hello: 'world' })` |
+| `.on(event, handler)` | Add event listener | `client.on('message', console.log)` |
+| `.open()` | Open/reopen connection | `client.open()` |
+| `.close()` | Close connection | `client.close()` |
 
-<br />
+### Events
 
-### 3. Use the channel.
-With the channel connected, simply call methods on it.  Every method is chainable, returning the connection again (for more chaining).
-
-| method | description | example |
+| Event | When | Payload |
 | --- | --- | --- |
-| **`.open()`** | Opens/re-opens the connection (manually, usually not needed). |
-| **`.close()`** | Closes the connection. | `channel.close()` |
-| **`.send(message: any)`** | Sends a message to the channel.  This can be anything serializable with JSON.stringify. | `channel.send({ type: 'chat', text: 'hello' })` |
-| **`.push(message: any)`** | Sends a message and immediately closes the connection. | `channel.push('Hello World!')` |
-| **`.on(eventName: string, listener)`** | Add an event listener. | `channel.on('close', () => console.log('channel closed'))` |
-| **`.remove(eventName: string, listener)`** | Remove an event listener. The 2nd argument must be the same listener function registered in the `on` method. | `channel.remove('open', myListenerFunction)` |
+| `message` | Message received | `{ message: any, id: string, date: Date }` |
+| `open` | Connection opened | none |
+| `close` | Connection closed | none |
+| `error` | Connection error | `{ message: string }` |
 
-#### Example
+## Why not raw WebSocket?
 
-```ts
+| Challenge | Raw WebSocket | itty-sockets |
+| --- | --- | --- |
+| Send before connected | ❌ Throws error | ✅ Queues automatically |
+| Reconnection | ❌ Manual rebinding | ✅ Events persist |
+| JSON handling | ❌ Manual stringify/parse | ✅ Automatic |
+| Message queuing | ❌ Build yourself | ✅ Built-in |
+| Race conditions | ❌ Check readyState | ✅ Handled for you |
 
-// connect
-const channel = connect('my-secret-channel')
+---
 
-// add event listeners or send messages
-
-channel
-  .on('message', ({ alias, uid, message, date }) =>
-    console.log(`${alias ?? uid} says: ${message} @ ${date.toLocaleTimeString()}`)
-  )
-  .on('join', ({ users }) =>
-    console.log(`A user has joined.  There are now ${users} in the channel.`)
-  )
-  .on('leave', ({ users }) =>
-    console.log(`A user has left.  There are now ${users} in the channel.`)
-  )
-  .send('Hello World!') // this will queue up and send the message once connected
-```
-
-<br />
-
-# Events
-Each event can have multiple listeners registered on it.  These are stable, even if the underlying WebSocket is broken/re-established.
-| event name | description | payload | example |
-| --- | --- | --- | --- |
-| `message` | Triggered when receiving a message event. | [MessageEvent](#messageevent) | `channel.on<MessageType = any>('message', listener)` |
-| `join` | Triggered when a user (including self) joins the channel. This alerts all users that someone has joined, and informs them of the total number of users in the channel. If the joining party connected with { announce: true }, their user details will be shared with the channel. | [JoinEvent](#joineevent) | `channel.on('join', e => console.log('There are now', e.users, 'users in the channel.')` |
-| `leave` | Triggered when a user leaves the channel. This alerts all users that someone has left, and informs them of the total number of users in the channel. If the leaving party connected with { announce: true }, their user details will be shared with the channel. | [LeaveEvent](#leaveeevent) | `channel.on('leave', e => console.log('There are now', e.users, 'users in the channel.')` |
-| `error` | Triggered when the server sends an error to the user. This is rare. | [ErrorEvent](#error) | `channel.on('error', e => console.error('IttySockets Error:', e.message)` |
-| `open` | Triggered when the connection is established. | none | `channel.on('open', () => console.log('connected to channel.')` |
-| `close` | Triggered when the connection is closed. | none | `channel.on('close', () => console.log('disconnected from channel.')` |
-
-
-<br />
-
-## EventTypes
-All event types *other* than `message` are identified with a `type` attribute.  For the sake of smaller payloads, `type` is omitted on normal messages.
-
-#### MessageEvent
-```ts
-type MessageEvent = {
-  id: string      // unique message ID
-  uid: string     // unique user ID
-  alias: string?  // optional display name
-  date: Date      // JavaScript Date object
-  message: any    // the message payload
-}
-```
-
-#### JoinEvent <a id="joinevent" />
-```ts
-type JoinEvent = {
-  type: 'join'    // type of event
-  uid?: string    // uid of joiner if { announce: true }
-  alias: string?  // alias of joiner if { announce: true }
-  date: Date      // date of event
-  users: number   // new number of users in the channel
-}
-```
-
-#### LeaveEvent
-```ts
-type LeaveEvent = {
-  type: 'leave'   // type of event
-  uid?: string    // uid of leaver if { announce: true }
-  alias: string?  // alias of leaver if { announce: true }
-  date: Date      // date of event
-  users: number   // new number of users in the channel
-}
-```
-
-#### ErrorEvent
-```ts
-type MessageEvent = {
-  type: 'error'   // error event identifier
-  date: Date      // JavaScript Date object
-  message: any    // the message payload
-}
-```
-
-<br />
-
-# Privacy
-[ittysockets.io](https://ittysockets.io) is a free, public-use, but _private_ service.
-
-It was designed by me (a developer), to help myself and other developers achieve cool things.  As such:
-
-1. Your messages are never transmitted to anything other than the sockets on the channel you're connected to.  No third-party service, no loggers, no storage (local or otherwise), not even a collection in memory. This protects your privacy/data, but keeps my costs to virtually zero, allowing me to share this service with the world... hopefully indefinitely.
-
-2. I ask that you please use the channels responsibly.  We're all sharing this space!
-
-
+**Need a backend?** The [ittysockets.io](https://ittysockets.io) service provides free WebSocket hosting for prototyping, but itty-sockets works with any WebSocket server.

@@ -1,0 +1,295 @@
+// Type definitions for the WebSocket manager
+interface WebSocketManagerOptions {
+  reconnectInterval?: number
+  maxReconnectAttempts?: number
+}
+
+interface OpenPayload {
+  timestamp: Date
+}
+
+interface MessagePayload<T = any> {
+  data: T
+  raw: string
+  timestamp: Date
+}
+
+interface ClosePayload {
+  code: number
+  reason: string
+  timestamp: Date
+}
+
+interface ErrorPayload {
+  error: Event
+  timestamp: Date
+}
+
+type Listener<T> = (payload: T) => void
+
+interface EventListeners<T = any> {
+  open: Listener<OpenPayload>[]
+  message: Listener<MessagePayload<T>>[]
+  close: Listener<ClosePayload>[]
+  error: Listener<ErrorPayload>[]
+}
+
+export interface WebSocketManager<T = any> {
+  connect(): this
+  disconnect(): this
+  send(data: any): this
+  on<K extends keyof EventListeners<T>>(eventType: K, listener: EventListeners<T>[K][0]): this
+  off<K extends keyof EventListeners<T>>(eventType: K, listener: EventListeners<T>[K][0]): this
+  readonly readyState: number
+  readonly isConnected: boolean
+  readonly queueLength: number
+  readonly reconnectAttempts: number
+}
+
+
+export function createWebSocketManager<T = any>(
+  url: string,
+  options: WebSocketManagerOptions = {}
+): WebSocketManager<T> {
+  const {
+    reconnectInterval = 1000,
+    maxReconnectAttempts = Infinity
+  } = options
+
+  let ws: WebSocket | null = null
+  let reconnectTimer: ReturnType<typeof setInterval> | null = null
+  let reconnectAttempts = 0
+  let isManuallyClosing = false
+
+  // Message queue for when socket isn't ready
+  const messageQueue: string[] = []
+
+  // Event listeners storage
+  const eventListeners: EventListeners<T> = {
+    open: [],
+    message: [],
+    close: [],
+    error: []
+  }
+
+  const emit = <K extends keyof EventListeners<T>>(
+    eventType: K,
+    data: Parameters<EventListeners<T>[K][0]>[0]
+  ) => {
+    // Using a type assertion as TypeScript struggles with this complex type in a loop.
+    (eventListeners[eventType] as Listener<any>[]).forEach(listener => {
+      try {
+        listener(data)
+      } catch (error) {
+        console.error(`Error in ${eventType} listener:`, error)
+      }
+    })
+  }
+
+  const clearReconnectTimer = () => {
+    if (reconnectTimer) {
+      clearInterval(reconnectTimer)
+      reconnectTimer = null
+    }
+  }
+
+  const flushMessageQueue = () => {
+    while (messageQueue.length > 0 && ws?.readyState === WebSocket.OPEN) {
+      const message = messageQueue.shift()
+      if (message) {
+        ws.send(message)
+      }
+    }
+  }
+
+  const bindWebSocketEvents = () => {
+    if (!ws) return
+
+    ws.onopen = () => {
+      reconnectAttempts = 0
+      clearReconnectTimer()
+
+      // Flush any queued messages
+      flushMessageQueue()
+
+      // Emit to external listeners
+      emit('open', { timestamp: new Date() })
+    }
+
+    ws.onmessage = (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data)
+        emit('message', { data, raw: event.data, timestamp: new Date() })
+      } catch {
+        emit('message', { data: event.data, raw: event.data, timestamp: new Date() })
+      }
+    }
+
+    ws.onclose = (event: CloseEvent) => {
+      emit('close', {
+        code: event.code,
+        reason: event.reason,
+        timestamp: new Date()
+      })
+
+      // Only auto-reconnect if not manually closing
+      if (!isManuallyClosing && reconnectAttempts < maxReconnectAttempts) {
+        scheduleReconnect()
+      }
+    }
+
+    ws.onerror = (error: Event) => {
+      emit('error', { error, timestamp: new Date() })
+    }
+  }
+
+  const scheduleReconnect = () => {
+    if (reconnectTimer) return // Already scheduled
+
+    reconnectTimer = setInterval(() => {
+      if (reconnectAttempts >= maxReconnectAttempts) {
+        clearReconnectTimer()
+        return
+      }
+
+      reconnectAttempts++
+      connect()
+    }, reconnectInterval)
+  }
+
+  const connect = () => {
+    try {
+      // Close existing connection if any
+      if (ws) {
+        ws.onopen = null
+        ws.onmessage = null
+        ws.onclose = null
+        ws.onerror = null
+        ws.close()
+      }
+
+      isManuallyClosing = false
+      ws = new WebSocket(url)
+      bindWebSocketEvents()
+
+    } catch (error) {
+      // It's better to check if 'error' is an instance of Error.
+      const event = error instanceof Event ? error : new Event('error')
+      emit('error', { error: event, timestamp: new Date() })
+    }
+  }
+
+  // Public API
+  const manager: WebSocketManager<T> = {
+    // Connection management
+    connect() {
+      clearReconnectTimer()
+      connect()
+      return manager
+    },
+
+    disconnect() {
+      isManuallyClosing = true
+      clearReconnectTimer()
+
+      if (ws) {
+        ws.close()
+        ws = null
+      }
+      return manager
+    },
+
+    // Message sending with queuing
+    send(data: any) {
+      const message = typeof data === 'string' ? data : JSON.stringify(data)
+
+      if (ws?.readyState === WebSocket.OPEN) {
+        ws.send(message)
+      } else {
+        messageQueue.push(message)
+
+        // Try to connect if not connected
+        if (!ws || ws.readyState === WebSocket.CLOSED) {
+          connect()
+        }
+      }
+      return manager
+    },
+
+    // Event listener management
+    on<K extends keyof EventListeners<T>>(
+      eventType: K,
+      listener: EventListeners<T>[K][0]
+    ) {
+      if (!eventListeners[eventType]) {
+        throw new Error(`Unknown event type: ${eventType}`)
+      }
+      (eventListeners[eventType] as Listener<any>[]).push(listener)
+      return manager
+    },
+
+    off<K extends keyof EventListeners<T>>(
+      eventType: K,
+      listener: EventListeners<T>[K][0]
+    ) {
+      if (!eventListeners[eventType]) {
+        throw new Error(`Unknown event type: ${eventType}`)
+      }
+      const listeners = eventListeners[eventType] as Listener<any>[]
+      const index = listeners.indexOf(listener)
+      if (index > -1) {
+        listeners.splice(index, 1)
+      }
+      return manager
+    },
+
+    // Status getters
+    get readyState() {
+      return ws?.readyState ?? WebSocket.CLOSED
+    },
+
+    get isConnected() {
+      return ws?.readyState === WebSocket.OPEN
+    },
+
+    get queueLength() {
+      return messageQueue.length
+    },
+
+    get reconnectAttempts() {
+      return reconnectAttempts
+    }
+  }
+
+  // Auto-connect on creation
+  connect()
+
+  return manager
+}
+
+// Usage Example:
+// Explicitly type the expected message data structure
+// interface MyMessage {
+//   type: string
+//   data: string
+// }
+
+// const socket = createWebSocketManager<MyMessage>('ws://localhost:8080', {
+//   reconnectInterval: 1000,
+//   maxReconnectAttempts: 10
+// })
+
+// // Add event listeners
+// socket
+//   .on('open', () => console.log('🟢 Connected!'))
+//   .on('message', ({ data }) => console.log('📨 Received:', data.type, data.data))
+//   .on('close', () => console.log('🔴 Disconnected'))
+//   .on('error', ({ error }) => console.error('❌ Error:', error))
+
+// // Send messages (will queue if not connected)
+// socket.send({ type: 'hello', data: 'world' })
+// socket.send('Simple string message')
+
+// Manual control
+// socket.disconnect() // Stop auto-reconnect
+// socket.connect()    // Manual reconnect
