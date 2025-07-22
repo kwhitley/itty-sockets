@@ -56,11 +56,11 @@ export let connect = (channelId: string, options: IttySocketOptions = {}): IttyS
     // @ts-ignore - options will be cast as string regardless of what is passed
     ws = new WebSocket((/^wss?:/.test(channelId) ? channelId : 'wss://ittysockets.io/c/' + channelId) + '?' + new URLSearchParams(options))
 
-    ws.onclose = () => {
-      closeAfterSend = 0
-      ws = null
+    ws.onclose = () => (
+      closeAfterSend = 0,
+      ws = null,
       events.close?.map(listener => listener())
-    }
+    )
 
     ws.onopen = () => {
       while (queue.length) ws?.send(queue.shift()!)
@@ -73,7 +73,7 @@ export let connect = (channelId: string, options: IttySocketOptions = {}): IttyS
       parsed = JSON.parse(event.data),
       payload = parsed?.message,
       eventPayload = {
-        ...(payload?.[0] === undefined && payload),
+        ...(payload?.[0] == null && payload),
         ...parsed,
         date: new Date(parsed.date),
       }
