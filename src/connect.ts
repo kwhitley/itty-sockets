@@ -49,9 +49,9 @@ export type IttySocketOptions = {
   announce?: true,
 }
 
-export const connect = (channelId: string, options: IttySocketOptions = {}): IttySocket => {
-  let closeAfterSend = 0, ws: WebSocket | null, queue: string[] = [], events: Record<string, Array<(event?: any) => any>> = {}, open = () => {
-    if (ws) return socket//Don't reconnect if already opening/open
+export let connect = (channelId: string, options: IttySocketOptions = {}): IttySocket => {
+  let ws: WebSocket | null, closeAfterSend = 0, queue: string[] = [], events: Record<string, Array<(event?: any) => any>> = {}, open = () => {
+    if (ws) return socket
 
     // @ts-ignore - options will be cast as string regardless of what is passed
     ws = new WebSocket((/^wss?:/.test(channelId) ? channelId : 'wss://ittysockets.io/c/' + channelId) + '?' + new URLSearchParams(options))
@@ -59,12 +59,12 @@ export const connect = (channelId: string, options: IttySocketOptions = {}): Itt
     ws.onclose = () => {
       closeAfterSend = 0
       ws = null
-      for (let listener of events.close ?? []) listener()
+      events.close?.map(listener => listener())
     }
 
     ws.onopen = () => {
       while (queue.length) ws?.send(queue.shift()!)
-      for (let listener of events.open ?? []) listener()
+      events.open?.map(listener => listener())
       if (closeAfterSend) ws?.close()
     }
 
@@ -73,20 +73,20 @@ export const connect = (channelId: string, options: IttySocketOptions = {}): Itt
       parsed = JSON.parse(event.data),
       payload = parsed?.message,
       eventPayload = {
-        ...(payload?.[0] == undefined && payload),  // custom payload first
-        ...parsed,                                  // then base props
-        date: new Date(parsed.date),                // then date
+        ...(payload?.[0] === undefined && payload),
+        ...parsed,
+        date: new Date(parsed.date),
       }
     ) => {
       events[payload?.type ?? parsed?.type ?? 'message']?.map(listener => listener(eventPayload))
-      events.all?.map(listener => listener(eventPayload)) // add an all channel
+      events.all?.map(listener => listener(eventPayload))
     }
 
     return socket
   }
 
   // @ts-ignore - dark itty magic
-  const socket = new Proxy(open, {
+  let socket = new Proxy(open, {
     get: (_, key: string) =>
       ({
         close: () => (ws?.readyState == 1 ? ws.close() : closeAfterSend = 1, socket),

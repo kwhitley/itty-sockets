@@ -66,7 +66,7 @@ import { connect } from 'itty-sockets'
 ...or simply paste this into your environment/console:
 <!-- BEGIN SNIPPET -->
 ```ts
-let connect=(e,s={})=>{let t,o=0,n=[],a={},l=()=>(t||(t=new WebSocket((/^wss?:/.test(e)?e:"wss://ittysockets.io/c/"+e)+"?"+new URLSearchParams(s)),t.onclose=()=>{o=0,t=null;for(let e of a.close??[])e()},t.onopen=()=>{for(;n.length;)t?.send(n.shift());for(let e of a.open??[])e();o&&t?.close()},t.onmessage=(e,s=JSON.parse(e.data),t=s?.message,o={...null==t?.[0]&&t,...s,date:new Date(s.date)})=>(a[t?.type??s?.type??"message"]?.map((e=>e(o))),a.all?.map((e=>e(o))))),r);const r=new Proxy(l,{get:(e,s)=>({close:()=>(1==t?.readyState?t.close():o=1,r),open:l,send:(e,s)=>(e=JSON.stringify(e),e=s?"@@"+s+"@@"+e:e,1==t?.readyState?(t.send(e),r):(n.push(e),l())),push:(e,s)=>(o=1,r.send(e,s)),on:(e,s)=>(s&&(a[e]??=[]).push(s),l()),remove:(e,s,t=a[e],o=t?.indexOf(s)??-1)=>(~o&&t?.splice(o,1),l())}[s])});return r};
+let e=(e,s={})=>{let t,a=0,n=[],o={},p=()=>(t||(t=new WebSocket((/^wss?:/.test(e)?e:"wss://ittysockets.io/c/"+e)+"?"+new URLSearchParams(s)),t.onclose=()=>{a=0,t=null,o.close?.map((e=>e()))},t.onopen=()=>{for(;n.length;)t?.send(n.shift());o.open?.map((e=>e())),a&&t?.close()},t.onmessage=(e,s=JSON.parse(e.data),t=s?.message,a={...void 0===t?.[0]&&t,...s,date:new Date(s.date)})=>{o[t?.type??s?.type??"message"]?.map((e=>e(a))),o.all?.map((e=>e(a)))}),l),l=new Proxy(p,{get:(e,s)=>({close:()=>(1==t?.readyState?t.close():a=1,l),open:p,send:(e,s)=>(e=JSON.stringify(e),e=s?"@@"+s+"@@"+e:e,1==t?.readyState?(t.send(e),l):(n.push(e),p())),push:(e,s)=>(a=1,l.send(e,s)),on:(e,s)=>(s&&(o[e]??=[]).push(s),p()),remove:(e,s,t=o[e],a=t?.indexOf(s)??-1)=>(~a&&t?.splice(a,1),p())}[s])});return l};
 ```
 <!-- END SNIPPET -->
 
