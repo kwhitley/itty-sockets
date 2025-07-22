@@ -65,6 +65,14 @@ const client = connect('ws://localhost:8080')
 setInterval(client.open, 1000)
 ```
 
+## ...or if using [ittysockets.io](https://ittysockets.io):
+```js
+// share a channel from ittysockets.io instead of your own socket server
+const channel = connect('my-secret-channel-name')
+  .on('message', console.log)
+  .send({ hello: 'world!' })
+```
+
 ## What itty-sockets handles for you
 
 - **Race conditions** - Works reliably in any connection state
