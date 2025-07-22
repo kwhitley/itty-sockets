@@ -244,7 +244,7 @@ const tests: TestTree = {
         }
       },
       '.on(\'{custom-type}\', listener)': {
-        'catches when message.type matches the custom type': async ({ channel, getChannel,resolve }) => {
+        'catches when message.type matches the custom type': async ({ channel, getChannel, resolve, spy }) => {
            channel.on<{ user: string, text: string }>('chat', (e) => {
               const { user, text } = e
               expect(user).toBe('test-user')
@@ -255,6 +255,7 @@ const tests: TestTree = {
               expect(e.user).toBe(e.message.user)
               resolve()
             })
+            .on('message', spy)
             getChannel().push({ type: 'chat', user: 'test-user', text: 'test' }) //
         },
       },

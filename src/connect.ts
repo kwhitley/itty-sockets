@@ -42,14 +42,6 @@ export type IttySocket = {
   remove(type: IttySocketEvent, listener: () => any): IttySocket
 }
 
-type EventListeners = {
-  open?: Array<() => any>
-  close?: Array<() => any>
-  message?: Array<(event: MessageEvent) => any>
-  join?: Array<(event: JoinEvent) => any>
-  leave?: Array<(event: LeaveEvent) => any>
-}
-
 export type IttySocketOptions = {
   as?: string,
   alias?: string,
@@ -58,7 +50,7 @@ export type IttySocketOptions = {
 }
 
 export const connect = (channelId: string, options: IttySocketOptions = {}): IttySocket => {
-  let closeAfterSend = 0, ws: WebSocket | null, queue: string[] = [], events: EventListeners = {}, open = () => {
+  let closeAfterSend = 0, ws: WebSocket | null, queue: string[] = [], events: Record<string, Array<(event?: any) => any>> = {}, open = () => {
     if (ws) return socket//Don't reconnect if already opening/open
 
     // @ts-ignore - options will be cast as string regardless of what is passed
@@ -80,15 +72,14 @@ export const connect = (channelId: string, options: IttySocketOptions = {}): Itt
       event: any,
       parsed = JSON.parse(event.data),
       payload = parsed?.message,
-    ) => {
-      // @ts-ignore
-      for (let listener of events[parsed.type ?? payload?.type ?? 'message'] ?? []) {
-        listener({
-          ...(payload?.[0] == undefined && payload),  // custom payload first
-          ...parsed,                                  // then base props
-          date: new Date(parsed.date),                // then date
-        })
+      eventPayload = {
+        ...(payload?.[0] == undefined && payload),  // custom payload first
+        ...parsed,                                  // then base props
+        date: new Date(parsed.date),                // then date
       }
+    ) => {
+      events[payload?.type ?? parsed?.type ?? 'message']?.map(listener => listener(eventPayload))
+      events.all?.map(listener => listener(eventPayload)) // add an all channel
     }
 
     return socket
@@ -107,7 +98,7 @@ export const connect = (channelId: string, options: IttySocketOptions = {}): Itt
         ),
         push: (message: any, recipient?: string) => (closeAfterSend = 1, socket.send(message, recipient)),
         on: (type: IttySocketEvent, listener: () => any) => (
-          (events[type] ??= []).push(listener),
+          listener && (events[type] ??= []).push(listener),
           open()
         ),
         remove: (
@@ -125,27 +116,30 @@ export const connect = (channelId: string, options: IttySocketOptions = {}): Itt
 // GENERICS TESTING
 // connect('test')
 //   .on('message', (e) => e.message.name)
-//   .on<{ age: number }>('message', (e) => e.message.name) // ERROR
 //   .on('close', () => {})
-//   .on<{ x: number }>('message', (e) => parseInt(e.message.x)) // ERROR
-//   .on<{ x: string }>('message', (e) => parseInt(e.message.x))
 //   .send(123)
+//   .on<{ x: string }>('message', (e) => parseInt(e.message.x))
 //   .send<{ foo: string }>({ foo: 'bar' })
+//   .on('join', e => e.users + 4)
+//   .on('leave', e => e.users - 4)
+//   .on('error', e => e.message)
+//   .on('message', e => e.message.whatever)
+//   .on('message', e => e.whatever)
+//   .on<{ foo: string }>('message', e => e.message.foo)
+//   .on<{ foo: string }>('message', e => e.foo)
+//   .on<{ foo: string }>('chat', e => e.foo)
+//   .on<{ foo: string }>('chat', e => e.type)
+//   .send({ $type: 'chat', foo: 'bar' })
+
+//   .on<{ age: number }>('message', (e) => e.message.name) // ERROR
+//   .on<{ x: number }>('message', (e) => parseInt(e.message.x)) // ERROR
 //   .send<string>(123) // ERROR
 //   .send<{ foo: string }>(123) // ERROR
 //   .send<{ foo: string }>({ foo: 'foo', bar: 123 }) // ERROR
-//   .on('join', e => e.users + 4)
 //   .on('join', e => e.message) // ERROR
 //   .on<{ foo: string }>('join', e => e.users) // ERROR
-//   .on('leave', e => e.users - 4)
-//   .on('error', e => e.message)
+//   .on('leave', e => e.message) // ERROR
 //   .on('error', e => e.foo) // ERROR
-//   .on('message', e => e.message.whatever)
-//   .on('message', e => e.whatever)
 //   .on<{ foo: string }>('message', e => e.message.whatever) // ERROR
-//   .on<{ foo: string }>('message', e => e.message.foo)
-//   .on<{ foo: string }>('message', e => e.foo)
 //   .on<{ foo: string }>('chat', e => e.bar) // ERROR
-//   .on<{ foo: string }>('chat', e => e.foo)
-//   .on<{ foo: string }>('chat', e => e.type)
 
