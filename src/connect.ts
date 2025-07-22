@@ -6,7 +6,7 @@ type OptionalUserDetails = { uid?: string, alias?: string }
 
 export type MessageEvent<MessageType = any> = {
   message: MessageType
-} & Date & UserDetails
+} & Date & UserDetails & MessageType
 
 export type JoinEvent = {
   type: 'join'
@@ -31,11 +31,14 @@ export type IttySocket = {
   connected: boolean,
   send: SendMessage,
   push: SendMessage,
-  on<MessageFormat = any>(type: 'message', listener: (event: MessageEvent<MessageFormat>) => any): IttySocket
+
+  // Specific overloads without generics come first
   on(type: 'join', listener: (event: JoinEvent) => any): IttySocket
   on(type: 'leave', listener: (event: LeaveEvent) => any): IttySocket
   on(type: 'error', listener: (event: ErrorEvent) => any): IttySocket
-  on(type: Exclude<IttySocketEvent, 'message'>, listener: () => any): IttySocket
+  on<MessageFormat = any>(type: 'message', listener: (event: MessageEvent<MessageFormat>) => any): IttySocket
+  on<MessageFormat = any>(type: string, listener: (event: MessageEvent<MessageFormat & { type: string }>) => any): IttySocket
+
   remove(type: IttySocketEvent, listener: () => any): IttySocket
 }
 
@@ -76,9 +79,16 @@ export const connect = (channelId: string, options: IttySocketOptions = {}): Itt
     ws.onmessage = (
       event: any,
       parsed = JSON.parse(event.data),
+      payload = parsed?.message,
     ) => {
       // @ts-ignore
-      for (let listener of events[parsed.type ?? 'message'] ?? []) listener({ ...parsed, date: new Date(parsed.date) })
+      for (let listener of events[parsed.type ?? payload?.type ?? 'message'] ?? []) {
+        listener({
+          ...(payload?.[0] == undefined && payload),  // custom payload first
+          ...parsed,                                  // then base props
+          date: new Date(parsed.date),                // then date
+        })
+      }
     }
 
     return socket
@@ -114,15 +124,28 @@ export const connect = (channelId: string, options: IttySocketOptions = {}): Itt
 
 // GENERICS TESTING
 // connect('test')
-//   .on('message', (e) => console.log(e.message.name)) // OK
-//   .on<{ age: number }>('message', (e) => console.log(e.message.name)) // error
-//   .on('close', () => console.log('close')) // OK
-//   .on<{ x: number }>('message', (e) => parseInt(e.message.x)) // error
-//   .on<{ x: string }>('message', (e) => parseInt(e.message.x)) // OK
-//   .send(123) // OK
-//   .send<string>(123) // error
-//   .on('join', e => console.log(e.users + 4)) // OK
-//   .on('join', e => console.log(e.message)) // error
-//   .on('leave', e => console.log(e.users - 4)) // OK
-//   .on('error', e => console.log(e.message)) // OK
-//   .on('error', e => console.log(e.foo)) // error
+//   .on('message', (e) => e.message.name)
+//   .on<{ age: number }>('message', (e) => e.message.name) // ERROR
+//   .on('close', () => {})
+//   .on<{ x: number }>('message', (e) => parseInt(e.message.x)) // ERROR
+//   .on<{ x: string }>('message', (e) => parseInt(e.message.x))
+//   .send(123)
+//   .send<{ foo: string }>({ foo: 'bar' })
+//   .send<string>(123) // ERROR
+//   .send<{ foo: string }>(123) // ERROR
+//   .send<{ foo: string }>({ foo: 'foo', bar: 123 }) // ERROR
+//   .on('join', e => e.users + 4)
+//   .on('join', e => e.message) // ERROR
+//   .on<{ foo: string }>('join', e => e.users) // ERROR
+//   .on('leave', e => e.users - 4)
+//   .on('error', e => e.message)
+//   .on('error', e => e.foo) // ERROR
+//   .on('message', e => e.message.whatever)
+//   .on('message', e => e.whatever)
+//   .on<{ foo: string }>('message', e => e.message.whatever) // ERROR
+//   .on<{ foo: string }>('message', e => e.message.foo)
+//   .on<{ foo: string }>('message', e => e.foo)
+//   .on<{ foo: string }>('chat', e => e.bar) // ERROR
+//   .on<{ foo: string }>('chat', e => e.foo)
+//   .on<{ foo: string }>('chat', e => e.type)
+
