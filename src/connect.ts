@@ -50,7 +50,12 @@ export type IttySocketOptions = {
 }
 
 export let connect = (channelId: string, options: IttySocketOptions = {}): IttySocket => {
-  let ws: WebSocket | null, closeAfterSend = 0, queue: string[] = [], events: Record<string, Array<(event?: any) => any>> = {}, open = () => {
+  let ws: WebSocket | null
+  let closeAfterSend = 0
+  let queue: string[] = []
+  // let external = /^wss?:/.test(channelId)
+  let events: Record<string, Array<(event?: any) => any>> = {}
+  let open = () => {
     if (ws) return socket
 
     // @ts-ignore - options will be cast as string regardless of what is passed
@@ -63,7 +68,7 @@ export let connect = (channelId: string, options: IttySocketOptions = {}): IttyS
       eventPayload = {
         ...(payload?.[0] == null && payload),
         ...parsed,
-        date: new Date(parsed.date),
+        ...(parsed.date && { date: new Date(parsed.date) })
       }
     ) => {
       events[payload?.type ?? parsed?.type ?? 'message']?.map(listener => listener(eventPayload))

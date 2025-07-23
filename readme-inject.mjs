@@ -1,7 +1,7 @@
 import fs from 'fs'
 
 const transformCode = code => code
-  .replace(/^const\s+(\w+)\s*=/, 'let connect=')
+  .replace(/^let\s+(\w+)\s*=/, 'let connect=')
   .replace(/;export\s*{[^}]+};?\s*$/, ';')
 
 const snippet = fs.readFileSync('dist/connect.snippet.js', 'utf-8')
