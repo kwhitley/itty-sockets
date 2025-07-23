@@ -53,8 +53,8 @@ export let connect = (channelId: string, options: IttySocketOptions = {}): IttyS
   let ws: WebSocket | null
   let closeAfterSend = 0
   let queue: string[] = []
-  // let external = /^wss?:/.test(channelId)
   let events: Record<string, Array<(event?: any) => any>> = {}
+
   let open = () => {
     if (ws) return socket
 
@@ -94,14 +94,14 @@ export let connect = (channelId: string, options: IttySocketOptions = {}): IttyS
   let socket = new Proxy(open, {
     get: (_, key: string) =>
       ({
-        close: () => (ws?.readyState == 1 ? ws.close() : closeAfterSend = 1, socket),
         open,
+        close: () => (ws?.readyState == 1 ? ws.close() : closeAfterSend = 1, socket),
+        push: (message: any, recipient?: string) => (closeAfterSend = 1, socket.send(message, recipient)),
         send: (message: any, recipient?: string) => (
           message = JSON.stringify(message),
           message = recipient ? '@@' + recipient + '@@' + message : message,
           ws?.readyState == 1 ? (ws.send(message), socket) : (queue.push(message), open())
         ),
-        push: (message: any, recipient?: string) => (closeAfterSend = 1, socket.send(message, recipient)),
         on: (type: IttySocketEvent, listener: () => any) => (
           listener && (events[type] ??= []).push(listener),
           open()
