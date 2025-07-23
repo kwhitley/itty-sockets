@@ -38,6 +38,7 @@ export type IttySocket = {
   on(type: 'error', listener: (event: ErrorEvent) => any): IttySocket
   on<MessageFormat = any>(type: 'message', listener: (event: MessageEvent<MessageFormat>) => any): IttySocket
   on<MessageFormat = any>(type: string, listener: (event: MessageEvent<MessageFormat & { type: string }>) => any): IttySocket
+  on<MessageFormat = any>(type: (event?: any) => any, listener: (event: MessageEvent<MessageFormat & { type: string }>) => any): IttySocket
 
   remove(type: IttySocketEvent, listener: () => any): IttySocket
 }
@@ -54,6 +55,7 @@ export let connect = (channelId: string, options: IttySocketOptions = {}): IttyS
   let closeAfterSend = 0
   let queue: string[] = []
   let events: Record<string, Array<(event?: any) => any>> = {}
+  let filters: Array<[(event?: any) => any, (event?: any) => any]> = []
 
   let open = () => {
     if (ws) return socket
@@ -72,6 +74,7 @@ export let connect = (channelId: string, options: IttySocketOptions = {}): IttyS
       }
     ) => {
       events[payload?.type ?? parsed?.type ?? 'message']?.map(listener => listener(eventPayload))
+      filters.map(([filter, listener]) => filter(eventPayload) && listener(eventPayload))
       events.all?.map(listener => listener(eventPayload))
     }
 
@@ -102,8 +105,9 @@ export let connect = (channelId: string, options: IttySocketOptions = {}): IttyS
           message = recipient ? '@@' + recipient + '@@' + message : message,
           ws?.readyState == 1 ? (ws.send(message), socket) : (queue.push(message), open())
         ),
-        on: (type: IttySocketEvent, listener: () => any) => (
-          listener && (events[type] ??= []).push(listener),
+        on: (type: IttySocketEvent | ((event?: any) => any), listener: () => any) => (
+          // @ts-ignore
+          listener && (type?.[0] ? (events[type] ??= []).push(listener) : filters.push([type, listener])),
           open()
         ),
         remove: (

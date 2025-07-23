@@ -300,7 +300,17 @@ const tests: TestTree = {
                expect(e.message.text).toBe('test')
                resolve()
             })
-            .send({ type: 'chat', user: 'test-user', text: 'test' })
+            .send({ type: 'chat', user: 'test-user', text: 'test' }),
+        'can accept a filter function as type': async ({ getChannel, resolve, spy }) =>
+          getChannel({ echo: true })
+            .on('message', spy)
+            .on(e => e.type === 'chat', () => {
+              setTimeout(() => {
+                expect(spy).not.toHaveBeenCalled()
+                resolve()
+              }, 5)
+            })
+            .send({ type: 'chat', user: 'test-user', text: 'test' }),
       },
       '.remove(\'open\', listener)': {
         'removes a listener (will not fire)': async ({ channel, resolve, spy }) =>
