@@ -51,11 +51,11 @@ export type IttySocketOptions = {
 }
 
 export let connect = (channelId: string, options: IttySocketOptions = {}): IttySocket => {
-  let ws: WebSocket | null
-  let closeAfterSend = 0
-  let queue: string[] = []
-  let filters: Array<[(event?: any) => any, (event?: any) => any]> = []
-  let events: Record<string, Array<(event?: any) => any>> = {}
+  let ws: WebSocket | null,
+      closeAfterSend = 0,
+      queue: string[] = [],
+      filters: Array<[(event?: any) => any, (event?: any) => any]> = [],
+      events: Record<string, Array<(event?: any) => any>> = {}
 
   let open = () => {
     if (ws) return socket
@@ -72,17 +72,17 @@ export let connect = (channelId: string, options: IttySocketOptions = {}): IttyS
         ...parsed,
         ...(parsed.date && { date: new Date(parsed.date) })
       }
-    ) => {
-      events[payload?.type ?? parsed?.type ?? 'message']?.map(listener => listener(eventPayload))
-      filters.map(([filter, listener]) => filter(eventPayload) && listener(eventPayload))
+    ) => (
+      events[payload?.type ?? parsed?.type ?? 'message']?.map(listener => listener(eventPayload)),
+      filters.map(([filter, listener]) => filter(eventPayload) && listener(eventPayload)),
       events['*']?.map(listener => listener(eventPayload))
-    }
+    )
 
-    ws.onopen = () => {
-      while (queue.length) ws?.send(queue.shift()!)
-      events.open?.map(listener => listener())
-      if (closeAfterSend) ws?.close()
-    }
+    ws.onopen = () => (
+      queue.splice(0).map(m => ws?.send(m)),
+      events.open?.map(listener => listener()),
+      closeAfterSend && ws?.close()
+    )
 
     ws.onclose = () => (
       closeAfterSend = 0,
