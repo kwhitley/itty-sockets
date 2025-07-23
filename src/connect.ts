@@ -54,8 +54,8 @@ export let connect = (channelId: string, options: IttySocketOptions = {}): IttyS
   let ws: WebSocket | null
   let closeAfterSend = 0
   let queue: string[] = []
-  let events: Record<string, Array<(event?: any) => any>> = {}
   let filters: Array<[(event?: any) => any, (event?: any) => any]> = []
+  let events: Record<string, Array<(event?: any) => any>> = {}
 
   let open = () => {
     if (ws) return socket
@@ -75,7 +75,7 @@ export let connect = (channelId: string, options: IttySocketOptions = {}): IttyS
     ) => {
       events[payload?.type ?? parsed?.type ?? 'message']?.map(listener => listener(eventPayload))
       filters.map(([filter, listener]) => filter(eventPayload) && listener(eventPayload))
-      events.all?.map(listener => listener(eventPayload))
+      events['*']?.map(listener => listener(eventPayload))
     }
 
     ws.onopen = () => {
@@ -139,6 +139,7 @@ export let connect = (channelId: string, options: IttySocketOptions = {}): IttyS
 //   .on<{ foo: string }>('chat', e => e.foo)
 //   .on<{ foo: string }>('chat', e => e.type)
 //   .send({ $type: 'chat', foo: 'bar' })
+//   .on('*', e => e.message)
 
 //   .on<{ age: number }>('message', (e) => e.message.name) // ERROR
 //   .on<{ x: number }>('message', (e) => parseInt(e.message.x)) // ERROR

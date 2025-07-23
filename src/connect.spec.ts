@@ -300,7 +300,9 @@ const tests: TestTree = {
                expect(e.message.text).toBe('test')
                resolve()
             })
-            .send({ type: 'chat', user: 'test-user', text: 'test' }),
+            .send({ type: 'chat', user: 'test-user', text: 'test' })
+      },
+      '.on(eventFilter, listener)': {
         'can accept a filter function as type': async ({ getChannel, resolve, spy }) =>
           getChannel({ echo: true })
             .on('message', spy)
@@ -311,6 +313,18 @@ const tests: TestTree = {
               }, 5)
             })
             .send({ type: 'chat', user: 'test-user', text: 'test' }),
+      },
+      '.on(\'*\', listener)': {
+        'registers an event listener that is called when any message is received': async ({ getChannel, spy, resolve }) => {
+          getChannel({ echo: true })
+            .on('*', spy)
+            .on('message', e => {
+              expect(spy).toHaveBeenCalled()
+              expect(e.message).toBe('test')
+              resolve()
+            })
+            .send('test')
+        },
       },
       '.remove(\'open\', listener)': {
         'removes a listener (will not fire)': async ({ channel, resolve, spy }) =>
