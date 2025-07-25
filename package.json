@@ -15,10 +15,7 @@
     "lint": "itty lint",
     "verify": "echo 'verifying module...' && bun run build && bun test",
     "prerelease": "bun run verify",
-    "prerelease:next": "bun run verify",
-    "prebuild": "bun run lint",
-    "build": "itty build --snippet=connect --hybrid",
-    "release:dry": "itty publish --patch --tag --dry-run",
+    "build": "itty lint && itty build --snippet=connect --hybrid",
     "release": "itty publish --tag --push --patch --src=dist",
     "release:next": "itty publish --tag --push --type=next --src=dist"
   },
@@ -38,6 +35,6 @@
   },
   "devDependencies": {
     "@types/bun": "^1.2.3",
-    "itty-packager": "^1.0.3"
+    "itty-packager": "^1.0.7"
   }
 }
