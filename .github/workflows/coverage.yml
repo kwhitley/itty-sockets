@@ -17,7 +17,7 @@ jobs:
         run: |
           git clean -xfd       # Remove all untracked files, including stale tests
           bun install
-          bun test --coverage
+          bun test --coverage --coverage-reporter=text --coverage-reporter=lcov
 
       - name: Coveralls
         uses: coverallsapp/github-action@master
