@@ -16,43 +16,47 @@
 
 ---
 
-Tiny realtime messaging client in under 500 bytes.  **No backend needed.**
+# Websockets : simplified and minified.
 
-## What does this solve?
-
-Itty Sockets simplifies sending/receiving realtime data.
-
-By pairing an ultra-tiny client (this) with the public **[ittysockets.io](https://ittysockets.io)** backend, you
-can focus on sending/receiving messages, instead of building a transport layer.
-
-The idea is simple:
-
-1. One or more parties connect to a channel (by name).
-2. They send/receive messages (this can be anything) in the channel.
-3. That's it!
-
-# Example
+Zero-config.  Pick a channel and go.  
 ```ts
-import { connect } from 'itty-sockets'
+import { connect } from 'itty-sockets' // ~510 bytes, or just paste the snippet
 
-// connect to a channel
-const foo = connect('my-secret-room-name')
+// CLIENT 1 (listens for messages)
+connect('unique-channel-name')
+  // listen for all messages
+  .on('message', e => console.log(e.message)) 
 
-foo
-  // we can listen for messages
-  .on('message', e => console.log(e.message))
-
-  // and/or send some
-  .send('Hello World!')     // "Hello World!"
-  .send([1, 2, 3])          // [1, 2, 3]
-  .send({ foo: 'bar' })     // { foo: "bar" }
+  // or just our custom messages
+  .on('my-chat-message', ({ user, text }) => console.log(user, 'says:', text))
 ```
 
-### Important Considerations
+```ts
+// CLIENT 2 (sends messages)
+const channel = connect('unique-channel-name')
+  .send({ foo: 'bar' })
+  .send({ type: 'my-chat-message', user: 'Halsey', text: 'Meow!' })
 
-1. **There is no history/replay/storage.**  It's a live stream only.
-2. **We don't authenticate.**  [ittysockets.io](https://ittysockets.io) leverages security through obfuscation (a near-infinite number of channel names).  Choose a more unique channel for more privacy.  Need more?  Consider encrypting/decrypting your payloads before transmission (this is easy).
-3. **There are no guarantees of delivery.**  While [ittysockets.io](https://ittysockets.io) is *extremely* stable, it's a free public service that is provided without any guarantees of delivery or uptime.  Manage risk accordingly.
+
+channel.send('what else can this do?')
+```
+
+
+### Or simply use `connect` as a tiny WebSocket client that brings the following:
+
+- JSON parsing/stringifying
+- message queing - sending automatically connects and queue is flushed on open
+- easy reconnection (listeners keep working)
+- custom listeners (based on message/payload match) <br />
+
+```ts
+const ws = connect('wss://somewhere.else')
+             .on('message', console.log) // log all messages
+             .send({ foo: 'bar' }) // send immediately, no waiting
+
+// optional - reconnect every second (no effect if open)
+setInterval(ws.open, 1000) 
+```
 
 <br />
 
@@ -81,17 +85,17 @@ To start, simply connect to a channel based on a unique name (this can be anythi
 import { connect } from 'itty-sockets'
 
 // basic connection
-const channel = connect('my-channels/my-super-secret-channel')
+const channel = connect('my-super-secret-channel')
 
 // with options
-const channel = connect('my-channels/my-super-secret-channel', {
-                  as: 'Kevin',
-                  announce: true,
-                  echo: true
+const channel = connect('my-super-secret-channel', {
+                  alias: 'Kevin', // optional non-unique identifier, visible in messages
+                  announce: true, // shares your uid/alias with the channel on joining
+                  echo: true      // echos your own messages back to you (for testing)
                 })
 
-// an external server
-const channel = connect('wss://somewhere.else/entirely')
+// or any external JSON WebSocket server
+const channel = connect('wss://somewhere.else.entirely')
 ```
 
 #### Connection Options
