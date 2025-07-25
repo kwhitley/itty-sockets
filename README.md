@@ -16,43 +16,46 @@
 
 ---
 
-Tiny realtime messaging client in under 500 bytes.  **No backend needed.**
+# WebSockets : simplified and minified.
 
-## What does this solve?
-
-Itty Sockets simplifies sending/receiving realtime data.
-
-By pairing an ultra-tiny client (this) with the public **[ittysockets.io](https://ittysockets.io)** backend, you
-can focus on sending/receiving messages, instead of building a transport layer.
-
-The idea is simple:
-
-1. One or more parties connect to a channel (by name).
-2. They send/receive messages (this can be anything) in the channel.
-3. That's it!
-
-# Example
+Zero-config.  Pick a channel and go.
 ```ts
-import { connect } from 'itty-sockets'
-
-// connect to a channel
-const foo = connect('my-secret-room-name')
-
-foo
-  // we can listen for messages
+// CLIENT 1 (listens for messages)
+connect('unique-channel-name')
+  // listen for all messages
   .on('message', e => console.log(e.message))
 
-  // and/or send some
-  .send('Hello World!')     // "Hello World!"
-  .send([1, 2, 3])          // [1, 2, 3]
-  .send({ foo: 'bar' })     // { foo: "bar" }
+  // or just our custom messages
+  .on('my-chat-message', ({ user, text }) => console.log(user, 'says:', text))
 ```
 
-### Important Considerations
+```ts
+// CLIENT 2 (sends messages)
+const channel = connect('unique-channel-name')
+  .send({ foo: 'bar' })
+  .send({ type: 'my-chat-message', user: 'Halsey', text: 'Meow!' })
 
-1. **There is no history/replay/storage.**  It's a live stream only.
-2. **We don't authenticate.**  [ittysockets.io](https://ittysockets.io) leverages security through obfuscation (a near-infinite number of channel names).  Choose a more unique channel for more privacy.  Need more?  Consider encrypting/decrypting your payloads before transmission (this is easy).
-3. **There are no guarantees of delivery.**  While [ittysockets.io](https://ittysockets.io) is *extremely* stable, it's a free public service that is provided without any guarantees of delivery or uptime.  Manage risk accordingly.
+
+channel.send('what else can this do?')
+```
+
+
+## Or simply use `connect` as a tiny WebSocket client that brings the following:
+
+- JSON parsing/stringifying
+- message queing - sending automatically connects and queue is flushed on open
+- easy reconnection (listeners keep working)
+- custom listeners/filters
+- chainable syntax (it's just handy)
+
+```ts
+const ws = connect('wss://somewhere.else')
+             .on('message', console.log) // log all messages
+             .send({ foo: 'bar' }) // send immediately, no waiting
+
+// optional - reconnect every second (no effect if open)
+setInterval(ws.open, 1000)
+```
 
 <br />
 
@@ -66,8 +69,7 @@ import { connect } from 'itty-sockets'
 ...or simply paste this into your environment/console:
 <!-- BEGIN SNIPPET -->
 ```ts
-let connect=(e,s={})=>{let o,t=0,n=[],a={},r=()=>(o||(o=new WebSocket((/^wss?:/.test(e)?e:"wss://ittysockets.io/c/"+e)+"?"+new URLSearchParams(s)),o.onclose=()=>{t=0,o=null;for(let e of a.close??[])e()},o.onopen=()=>{for(;n.length;)o?.send(n.shift());for(let e of a.open??[])e();t&&o?.close()},o.onmessage=(e,s=JSON.parse(e.data))=>{for(let e of a[s.type??"message"]??[])e({...s,date:new Date(s.date)})}),l);const l=new Proxy(r,{get:(e,s)=>({close:()=>(1==o?.readyState?o.close():t=1,l),open:r,send:(e,s)=>(e=JSON.stringify(e),e=s?"@@"+s+"@@"+e:e,1==o?.readyState?(o.send(e),l):(n.push(e),r())),push:(e,s)=>(t=1,l.send(e,s)),on:(e,s)=>((a[e]??=[]).push(s),r()),remove:(e,s,o=a[e],t=o?.indexOf(s)??-1)=>(~t&&o?.splice(t,1),r())}[s])});return l};
-```
+let connect=(e,s={})=>{let t,a=0,n=[],p=[],o={},l=()=>(t||(t=new WebSocket((/^wss?:/.test(e)?e:"wss://ittysockets.io/c/"+e)+"?"+new URLSearchParams(s)),t.onmessage=(e,s=JSON.parse(e.data),t=s?.message,a={...null==t?.[0]&&t,...s,...s.date&&{date:new Date(s.date)}})=>{o[s?.type??t?.type]?.map(e=>e(a)),s?.type||o.message?.map(e=>e(a)),p.map(([e,s])=>e(a)&&s(a))},t.onopen=()=>(n.splice(0).map(e=>t?.send(e)),o.open?.map(e=>e()),a&&t?.close()),t.onclose=()=>(a=0,t=null,o.close?.map(e=>e()))),c),c=new Proxy(l,{get:(e,s)=>({open:l,close:()=>(1==t?.readyState?t.close():a=1,c),push:(e,s)=>(a=1,c.send(e,s)),send:(e,s)=>(e=JSON.stringify(e),e=s?"@@"+s+"@@"+e:e,1==t?.readyState?(t.send(e),c):(n.push(e),l())),on:(e,s)=>(s&&(e?.[0]?(o[e]??=[]).push(s):p.push([e,s])),l()),remove:(e,s,t=o[e],a=t?.indexOf(s)??-1)=>(~a&&t?.splice(a,1),l())}[s])});return c};```
 <!-- END SNIPPET -->
 
 <br />
@@ -81,17 +83,17 @@ To start, simply connect to a channel based on a unique name (this can be anythi
 import { connect } from 'itty-sockets'
 
 // basic connection
-const channel = connect('my-channels/my-super-secret-channel')
+const channel = connect('my-super-secret-channel')
 
 // with options
-const channel = connect('my-channels/my-super-secret-channel', {
-                  as: 'Kevin',
-                  announce: true,
-                  echo: true
+const channel = connect('my-super-secret-channel', {
+                  alias: 'Kevin', // optional non-unique identifier, visible in messages
+                  announce: true, // shares your uid/alias with the channel on joining
+                  echo: true      // echos your own messages back to you (for testing)
                 })
 
-// an external server
-const channel = connect('wss://somewhere.else/entirely')
+// or any external JSON WebSocket server
+const channel = connect('wss://somewhere.else.entirely')
 ```
 
 #### Connection Options

@@ -1,39 +1,31 @@
 {
   "name": "itty-sockets",
-  "version": "0.5.2",
-  "description": "Tiny realtime messaging client in under 450 bytes.  No backend needed.",
+  "version": "0.5.3",
+  "description": "WebSockets : simplified and minified.",
   "type": "module",
   "exports": {
     ".": {
-      "import": "./index.mjs",
-      "require": "./index.js",
-      "types": "./index.d.ts"
-    },
-    "./connect": {
-      "import": "./connect.mjs",
-      "require": "./connect.js",
-      "types": "./connect.d.ts"
+      "import": "./dist/connect.mjs",
+      "types": "./dist/connect.d.ts",
+      "require": "./dist/connect.cjs"
     }
   },
   "scripts": {
-    "dev": "bun test --watch",
-    "lint": "bun eslint src",
+    "dev": "bun test --watch --coverage",
+    "lint": "itty lint",
     "verify": "echo 'verifying module...' && bun run build && bun test",
     "prerelease": "bun run verify",
     "prerelease:next": "bun run verify",
-    "prebuild": "rimraf dist && mkdir dist",
-    "build": "rollup -c && bun readme-inject.mjs",
-    "release": "release --tag --push --patch --src=dist",
-    "release:next": "release --tag --push --type=next --src=dist"
+    "prebuild": "bun run lint",
+    "build": "itty build --snippet=connect --hybrid",
+    "release:dry": "itty publish --patch --tag --dry-run",
+    "release": "itty publish --tag --push --patch --src=dist",
+    "release:next": "itty publish --tag --push --type=next --src=dist"
   },
   "keywords": [
     "websockets",
     "realtime",
-    "public",
-    "messages",
-    "tiny",
-    "free",
-    "p2p"
+    "client"
   ],
   "repository": {
     "type": "git",
@@ -45,18 +37,7 @@
     "url": "https://github.com/kwhitley/itty-sockets/issues"
   },
   "devDependencies": {
-    "@rollup/plugin-terser": "^0.4.4",
-    "@rollup/plugin-typescript": "^11.1.6",
     "@types/bun": "^1.2.3",
-    "@typescript-eslint/eslint-plugin": "^8.18.0",
-    "@typescript-eslint/parser": "^8.18.0",
-    "eslint": "^9.17.0",
-    "globby": "^14.1.0",
-    "rimraf": "^6.0.1",
-    "rollup": "^4.28.1",
-    "rollup-plugin-bundle-size": "^1.0.3",
-    "rollup-plugin-copy": "^3.5.0",
-    "typescript": "^5.7.2",
-    "yarn-release": "^1.10.6"
+    "itty-packager": "^1.0.3"
   }
 }

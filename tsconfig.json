@@ -12,8 +12,6 @@
     "listFiles": false,
     "noFallthroughCasesInSwitch": true,
     "pretty": true,
-    // "moduleResolution": "nodeNext",  // disabled to be compatible with module: "esnext"
-    // "resolveJsonModule": true,       // disabled to be compatible with module: "esnext"
     "rootDir": "src",
     "skipLibCheck": true,
     "strict": true,
@@ -22,6 +20,6 @@
     "target": "esnext",
     "module": "esnext"
   },
-  "exclude": ["node_modules", "dist", "**/*.spec.ts", "examples"],
-  "include": ["src", "src/seconds.ts", "test"]
+  "exclude": ["node_modules", "dist", "**/*.spec.ts"],
+  "include": ["src"]
 }

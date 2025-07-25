@@ -65,7 +65,13 @@ const tests: TestTree = {
               expect(msg.alias).toBe('test-user')
               resolve()
             })
-            .send('test')
+            .send('test'),
+        'sets alias for join events if { announce: true } is set': async ({ getChannel, resolve }) =>
+          getChannel({ echo: true, alias: 'test-user', announce: true })
+            .on('join', ({ alias }) => {
+              expect(alias).toBe('test-user')
+              resolve()
+            }),
       },
       '{ as: string }': {
         'sets alias for messages': async ({ getChannel, resolve }) =>
@@ -157,6 +163,56 @@ const tests: TestTree = {
               resolve()
             })
             .send('test'),
+        'receives message props on base message object': async ({ getChannel, resolve }) =>
+          getChannel({ echo: true })
+            .on<{ foo: string }>('message', (e) => {
+              expect(e.foo).toBe('bar')
+              expect(e.message.foo).toBe('bar')
+              resolve()
+            })
+            .send({ foo: 'bar' }),
+        'message props do not override event base props': async ({ getChannel, resolve }, date = new Date()) =>
+          getChannel({ echo: true, alias: 'test-user' })
+            .on('message', (e) => {
+              expect(e.foo).toBe('bar')
+              // confirm types are correct
+              expect(e.uid).toBeTypeOf('string')
+              expect(e.alias).toBeTypeOf('string')
+              expect(e.date).toBeInstanceOf(Date)
+              // confirm props are not overridden
+              expect(e.uid).not.toBe('foo')
+              expect(e.alias).not.toBe('bar')
+              expect(e.date).not.toBe(date)
+              resolve()
+            })
+            .send({ foo: 'bar', uid: 'foo', alias: 'bar', date }),
+        'base props not polluted by string messages': async ({ getChannel, resolve, spy }) =>
+          getChannel({ echo: true })
+            .on('message', spy)
+            .on('message', (e) => {
+              expect(e[0]).toBeUndefined() // "h" if polluted
+              expect(spy).toHaveBeenCalled()
+              resolve()
+            })
+            .send('hello'),
+        'base props not polluted by array messages': async ({ getChannel, resolve, spy }) =>
+          getChannel({ echo: true })
+            .on('message', spy)
+            .on('message', (e) => {
+              expect(e[0]).toBeUndefined() // "1" if polluted
+              expect(spy).toHaveBeenCalled()
+              resolve()
+            })
+            .send([1, 2, 3]),
+        'base props not polluted by numeric messages': async ({ getChannel, resolve, spy }) =>
+          getChannel({ echo: true })
+            .on('message', spy)
+            .on('message', (e) => {
+              expect(e[0]).toBeUndefined() // "?" if polluted
+              expect(spy).toHaveBeenCalled()
+              resolve()
+            })
+            .send(13),
       },
       '.on(\'join\', listener)': {
         'registers an event listener that is called when a user (or self) joins the channel': async ({ channel, resolve }) =>
@@ -206,6 +262,57 @@ const tests: TestTree = {
             })
           getChannel({ announce: true, alias: 'test-user' }).push('test') // trigger a join + leave
         }
+      },
+      '.on(\'{custom-type}\', listener)': {
+        'catches when message.type matches the custom type': async ({ channel, getChannel, resolve, spy }) => {
+           channel.on<{ user: string, text: string }>('chat', (e) => {
+              const { user, text } = e
+              expect(user).toBe('test-user')
+              expect(text).toBe('test')
+              expect(e.type).toBe('chat') // currently giving a TS error (incorrect)
+              expect(e.uid).toBeTypeOf('string')
+              expect(e.date).toBeInstanceOf(Date)
+              expect(e.user).toBe(e.message.user)
+              resolve()
+            })
+            .on('message', spy)
+            getChannel().push({ type: 'chat', user: 'test-user', text: 'test' }) //
+        },
+        'will still trigger "message" listeners': async ({ getChannel, resolve, spy }) =>
+          getChannel({ echo: true })
+            .on('message', spy)
+            .on('chat', () => {
+              setTimeout(() => {
+                expect(spy).toHaveBeenCalled()
+                resolve()
+              }, 5)
+            })
+            .send({ type: 'chat', user: 'test-user', text: 'test' }),
+        'will include custom payloads at top level and under e.message': async ({ getChannel, resolve, spy }) =>
+          getChannel({ echo: true })
+            .on('message', spy)
+            .on('chat', (e) => {
+               expect(e.type).toBe('chat')
+               expect(e.user).toBe('test-user')
+               expect(e.text).toBe('test')
+               expect(e.message.type).toBe('chat')
+               expect(e.message.user).toBe('test-user')
+               expect(e.message.text).toBe('test')
+               resolve()
+            })
+            .send({ type: 'chat', user: 'test-user', text: 'test' })
+      },
+      '.on(eventFilter, listener)': {
+        'can accept a filter function as type': async ({ getChannel, resolve, spy }) =>
+          getChannel({ echo: true })
+            .on('message', spy)
+            .on(e => e.type === 'chat', () => {
+              setTimeout(() => {
+                expect(spy).toHaveBeenCalled()
+                resolve()
+              }, 5)
+            })
+            .send({ type: 'chat', user: 'test-user', text: 'test' }),
       },
       '.remove(\'open\', listener)': {
         'removes a listener (will not fire)': async ({ channel, resolve, spy }) =>
@@ -357,7 +464,7 @@ const tests: TestTree = {
               resolve()
             })
             .send('test'),
-        'with { alias: string }': async ({ getChannel, resolve }) =>
+        'with { alias: string } includes users alias in payload': async ({ getChannel, resolve }) =>
           getChannel({ echo: true, alias: 'test-user' })
             .on('message', e => {
               expect(e.message).toBe('test')
