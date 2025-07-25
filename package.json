@@ -5,9 +5,9 @@
   "type": "module",
   "exports": {
     ".": {
-      "import": "./connect.mjs",
-      "types": "./connect.d.ts",
-      "require": "./connect.cjs"
+      "import": "./dist/connect.mjs",
+      "types": "./dist/connect.d.ts",
+      "require": "./dist/connect.cjs"
     }
   },
   "scripts": {
@@ -16,6 +16,7 @@
     "verify": "echo 'verifying module...' && bun run build && bun test",
     "prerelease": "bun run verify",
     "prerelease:next": "bun run verify",
+    "prebuild": "bun run lint",
     "build": "itty build --snippet=connect --hybrid",
     "release:dry": "itty publish --patch --tag --dry-run",
     "release": "itty publish --tag --push --patch --src=dist",
@@ -37,6 +38,6 @@
   },
   "devDependencies": {
     "@types/bun": "^1.2.3",
-    "itty-packager": "^1.0.2"
+    "itty-packager": "^1.0.3"
   }
 }
