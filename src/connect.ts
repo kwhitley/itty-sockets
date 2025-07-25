@@ -71,12 +71,12 @@ export let connect = (channelId: string, options: IttySocketOptions = {}): IttyS
         ...(payload?.[0] == null && payload),
         ...parsed,
         ...(parsed.date && { date: new Date(parsed.date) })
-      }
-    ) => (
-      events[payload?.type ?? parsed?.type ?? 'message']?.map(listener => listener(eventPayload)),
-      filters.map(([filter, listener]) => filter(eventPayload) && listener(eventPayload)),
-      events['*']?.map(listener => listener(eventPayload))
-    )
+      },
+    ) => {
+      events[parsed?.type ?? payload?.type]?.map(listener => listener(eventPayload)) // all custom messages
+      if (!parsed?.type) events.message?.map(listener => listener(eventPayload)) // all user messages
+      filters.map(([filter, listener]) => filter(eventPayload) && listener(eventPayload)) // all filtered messages
+    }
 
     ws.onopen = () => (
       queue.splice(0).map(m => ws?.send(m)),

@@ -278,12 +278,12 @@ const tests: TestTree = {
             .on('message', spy)
             getChannel().push({ type: 'chat', user: 'test-user', text: 'test' }) //
         },
-        'will intercept custom message types, preventing "message" listeners from firing': async ({ getChannel, resolve, spy }) =>
+        'will still trigger "message" listeners': async ({ getChannel, resolve, spy }) =>
           getChannel({ echo: true })
             .on('message', spy)
             .on('chat', () => {
-               setTimeout(() => {
-                expect(spy).not.toHaveBeenCalled()
+              setTimeout(() => {
+                expect(spy).toHaveBeenCalled()
                 resolve()
               }, 5)
             })
@@ -308,23 +308,11 @@ const tests: TestTree = {
             .on('message', spy)
             .on(e => e.type === 'chat', () => {
               setTimeout(() => {
-                expect(spy).not.toHaveBeenCalled()
+                expect(spy).toHaveBeenCalled()
                 resolve()
               }, 5)
             })
             .send({ type: 'chat', user: 'test-user', text: 'test' }),
-      },
-      '.on(\'*\', listener)': {
-        'registers an event listener that is called when any message is received': async ({ getChannel, spy, resolve }) => {
-          getChannel({ echo: true })
-            .on('*', spy)
-            .on('message', e => {
-              expect(spy).toHaveBeenCalled()
-              expect(e.message).toBe('test')
-              resolve()
-            })
-            .send('test')
-        },
       },
       '.remove(\'open\', listener)': {
         'removes a listener (will not fire)': async ({ channel, resolve, spy }) =>
