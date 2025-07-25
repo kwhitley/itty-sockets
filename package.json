@@ -17,7 +17,9 @@
     "prerelease": "bun run verify",
     "prerelease:next": "bun run verify",
     "packager": "itty-packager",
+    "prebuild": "itty lint",
     "build": "itty build --snippet=connect --hybrid",
+    "dry-release": "itty publish --patch --tag --dry-run",
     "release": "release --tag --push --patch --src=dist",
     "release:next": "release --tag --push --type=next --src=dist"
   },
@@ -37,8 +39,6 @@
   },
   "devDependencies": {
     "@types/bun": "^1.2.3",
-    "itty-packager": "file:../itty-packager",
-    "typescript": "^5.7.2",
-    "yarn-release": "^1.10.6"
+    "itty-packager": "itty-packager"
   }
 }

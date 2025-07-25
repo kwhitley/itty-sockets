@@ -170,7 +170,7 @@ const tests: TestTree = {
               expect(e.message.foo).toBe('bar')
               resolve()
             })
-            .send({ foo: 'bar'}),
+            .send({ foo: 'bar' }),
         'message props do not override event base props': async ({ getChannel, resolve }, date = new Date()) =>
           getChannel({ echo: true, alias: 'test-user' })
             .on('message', (e) => {
