@@ -18,14 +18,14 @@
 
 # Websockets : simplified and minified.
 
-Zero-config.  Pick a channel and go.  
+Zero-config.  Pick a channel and go.
 ```ts
 import { connect } from 'itty-sockets' // ~510 bytes, or just paste the snippet
 
 // CLIENT 1 (listens for messages)
 connect('unique-channel-name')
   // listen for all messages
-  .on('message', e => console.log(e.message)) 
+  .on('message', e => console.log(e.message))
 
   // or just our custom messages
   .on('my-chat-message', ({ user, text }) => console.log(user, 'says:', text))
@@ -55,7 +55,7 @@ const ws = connect('wss://somewhere.else')
              .send({ foo: 'bar' }) // send immediately, no waiting
 
 // optional - reconnect every second (no effect if open)
-setInterval(ws.open, 1000) 
+setInterval(ws.open, 1000)
 ```
 
 <br />
