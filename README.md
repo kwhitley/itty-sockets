@@ -16,12 +16,10 @@
 
 ---
 
-# Websockets : simplified and minified.
+# WebSockets : simplified and minified.
 
 Zero-config.  Pick a channel and go.
 ```ts
-import { connect } from 'itty-sockets' // ~510 bytes, or just paste the snippet
-
 // CLIENT 1 (listens for messages)
 connect('unique-channel-name')
   // listen for all messages
@@ -42,12 +40,13 @@ channel.send('what else can this do?')
 ```
 
 
-### Or simply use `connect` as a tiny WebSocket client that brings the following:
+## Or simply use `connect` as a tiny WebSocket client that brings the following:
 
 - JSON parsing/stringifying
 - message queing - sending automatically connects and queue is flushed on open
 - easy reconnection (listeners keep working)
-- custom listeners (based on message/payload match) <br />
+- custom listeners/filters
+- chainable syntax (it's just handy)
 
 ```ts
 const ws = connect('wss://somewhere.else')
