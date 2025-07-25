@@ -1,7 +1,7 @@
 {
   "name": "itty-sockets",
   "version": "0.5.2",
-  "description": "Tiny realtime messaging client in under 450 bytes.  No backend needed.",
+  "description": "WebSockets : simplified and minified.",
   "type": "module",
   "exports": {
     ".": {
@@ -12,7 +12,7 @@
   },
   "scripts": {
     "dev": "bun test --watch",
-    "lint": "bun eslint src",
+    "lint": "itty lint",
     "verify": "echo 'verifying module...' && bun run build && bun test",
     "prerelease": "bun run verify",
     "prerelease:next": "bun run verify",
@@ -24,11 +24,7 @@
   "keywords": [
     "websockets",
     "realtime",
-    "public",
-    "messages",
-    "tiny",
-    "free",
-    "p2p"
+    "client"
   ],
   "repository": {
     "type": "git",
@@ -41,9 +37,6 @@
   },
   "devDependencies": {
     "@types/bun": "^1.2.3",
-    "@typescript-eslint/eslint-plugin": "^8.18.0",
-    "@typescript-eslint/parser": "^8.18.0",
-    "eslint": "^9.17.0",
     "itty-packager": "file:../itty-packager",
     "typescript": "^5.7.2",
     "yarn-release": "^1.10.6"
