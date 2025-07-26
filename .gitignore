@@ -1,11 +1,8 @@
-# OS ignores
 .DS_Store
-dist
-node_modules
-
-# Coverage directory used by tools like istanbul
-coverage
-*.lcov
-
-# Claude Code
+.claude
+.dist
+.vscode
 CLAUDE.md
+node_modules
+coverage
+dist
