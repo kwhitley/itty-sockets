@@ -1,23 +1,22 @@
 {
   "name": "itty-sockets",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "WebSockets : simplified and minified.",
   "type": "module",
   "exports": {
     ".": {
-      "import": "./dist/connect.mjs",
-      "types": "./dist/connect.d.ts",
-      "require": "./dist/connect.cjs"
+      "import": "./connect.mjs",
+      "types": "./connect.d.ts",
+      "require": "./connect.cjs"
     }
   },
   "scripts": {
     "dev": "bun test --watch --coverage",
+    "test": "bun test --coverage",
     "lint": "itty lint",
-    "verify": "echo 'verifying module...' && bun run build && bun test",
-    "prerelease": "bun run verify",
     "build": "itty lint && itty build --snippet=connect --hybrid",
-    "release": "itty publish --tag --push --patch --src=dist",
-    "release:next": "itty publish --tag --push --type=next --src=dist"
+    "release": "itty release --prepare --tag --push",
+    "release:next": "itty release --prepare --tag --push --type=next"
   },
   "keywords": [
     "websockets",
@@ -35,6 +34,6 @@
   },
   "devDependencies": {
     "@types/bun": "^1.2.3",
-    "itty-packager": "^1.0.11"
+    "itty-packager": "^1.6.7"
   }
 }
