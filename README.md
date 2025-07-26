@@ -18,7 +18,7 @@
 
 # WebSockets : simplified and minified.
 
-Zero-config.  Pick a channel and go.
+Zero-config.  Pick a [public channel](https://ittysockets.io) and go.
 ```ts
 // CLIENT 1 (listens for messages)
 connect('unique-channel-name')
