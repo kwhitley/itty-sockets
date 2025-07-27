@@ -28,14 +28,16 @@ connect('unique-channel-name')
   .on('message', e => console.log(e.message))
 
   // or just our custom messages
-  .on('my-chat-message', ({ user, text }) => console.log(user, 'says:', text))
+  .on('greeting',
+    ({ user, text }) => console.log(user, 'says:', text)
+  )
 ```
 
 ```ts
 // CLIENT 2 (sends messages)
 const channel = connect('unique-channel-name')
   .send({ foo: 'bar' })
-  .send({ type: 'my-chat-message', user: 'Halsey', text: 'Meow!' })
+  .send({ type: 'greeting', user: 'Halsey', text: 'Meow!' })
 
 
 channel.send('what else can this do?')
