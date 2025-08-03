@@ -4,10 +4,15 @@
   "description": "WebSockets : simplified and minified.",
   "type": "module",
   "exports": {
-    ".": {
-      "import": "./connect.mjs",
-      "types": "./connect.d.ts",
-      "require": "./connect.cjs"
+    "./connect": {
+      "import": "./dist/connect.mjs",
+      "types": "./dist/connect.d.ts",
+      "require": "./dist/connect.cjs"
+    },
+    "./ws": {
+      "import": "./dist/ws.mjs",
+      "types": "./dist/ws.d.ts",
+      "require": "./dist/ws.cjs"
     }
   },
   "scripts": {
