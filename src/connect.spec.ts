@@ -178,7 +178,7 @@ const tests: TestTree = {
               // confirm types are correct
               expect(e.uid).toBeTypeOf('string')
               expect(e.alias).toBeTypeOf('string')
-              expect(e.date).toBeInstanceOf(Date)
+              expect(e.date).toBeTypeOf('number')
               // confirm props are not overridden
               expect(e.uid).not.toBe('foo')
               expect(e.alias).not.toBe('bar')

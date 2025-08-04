@@ -4,9 +4,9 @@ type Date = { date: Date }
 type UserDetails = { uid: string, alias?: string }
 type OptionalUserDetails = { uid?: string, alias?: string }
 
-export type MessageEvent<MessageType = any> = {
+export type IttyFormat<MessageType = any> = {
   message: MessageType
-} & Date & UserDetails & MessageType
+} & UserDetails & Date
 
 export type JoinEvent = {
   type: 'join'
@@ -23,24 +23,25 @@ export type ErrorEvent = {
   message: string
 } & Date
 
-export type SendMessage = <MessageFormat = any>(message: MessageFormat, recipient?: string) => IttySocket
+export type SendMessage = <MessageFormat = any>(message: MessageFormat, recipient?: string) => IttySocket<GF>
 
-export type IttySocket = {
-  open: () => IttySocket,
-  close: () => IttySocket,
+export type IttySocket<GF = {}> = {
+  open: () => IttySocket<GF>,
+  close: () => IttySocket<GF>,
   connected: boolean,
   send: SendMessage,
   push: SendMessage,
+  remove(type: IttySocketEvent, listener: () => any): IttySocket<GF>
 
-  // Specific overloads without generics come first
-  on(type: 'join', listener: (event: JoinEvent) => any): IttySocket
-  on(type: 'leave', listener: (event: LeaveEvent) => any): IttySocket
-  on(type: 'error', listener: (event: ErrorEvent) => any): IttySocket
-  on<MessageFormat = any>(type: 'message', listener: (event: MessageEvent<MessageFormat>) => any): IttySocket
-  on<MessageFormat = any>(type: string, listener: (event: MessageEvent<MessageFormat & { type: string }>) => any): IttySocket
-  on<MessageFormat = any>(type: (event?: any) => any, listener: (event: MessageEvent<MessageFormat & { type: string }>) => any): IttySocket
-
-  remove(type: IttySocketEvent, listener: () => any): IttySocket
+  // EVENTS
+  on(type: 'open', listener: () => any): IttySocket<GF>
+  on(type: 'close', listener: () => any): IttySocket<GF>
+  on(type: 'join', listener: (event: JoinEvent) => any): IttySocket<GF>
+  on(type: 'leave', listener: (event: LeaveEvent) => any): IttySocket<GF>
+  on(type: 'error', listener: (event: ErrorEvent) => any): IttySocket<GF>
+  on<MessageFormat = GF>(type: 'message', listener: (event: GF & MessageFormat) => any): IttySocket<GF>
+  on<MessageFormat = GF>(type: string, listener: (event: GF & MessageFormat & { type: string }) => any): IttySocket<GF>
+  on<MessageFormat = GF>(type: (event?: any) => any, listener: (event: GF & MessageFormat & { type: string }) => any): IttySocket<GF>
 }
 
 export type IttySocketOptions = {
@@ -50,7 +51,7 @@ export type IttySocketOptions = {
   announce?: true,
 }
 
-export let connect = (channelId: string, options: IttySocketOptions = {}): IttySocket => {
+export let connect = <GF = {}>(channelId: string, options: IttySocketOptions = {}): IttySocket<GF> => {
   let ws: WebSocket | null,
       closeAfterSend = 0,
       queue: string[] = [],
@@ -70,7 +71,6 @@ export let connect = (channelId: string, options: IttySocketOptions = {}): IttyS
       eventPayload = {
         ...(payload?.[0] == null && payload),
         ...parsed,
-        ...(parsed.date && { date: new Date(parsed.date) })
       },
     ) => {
       events[parsed?.type ?? payload?.type]?.map(listener => listener(eventPayload)) // all custom messages
@@ -117,10 +117,23 @@ export let connect = (channelId: string, options: IttySocketOptions = {}): IttyS
           i = listeners?.indexOf(listener) ?? -1
         ) => (~i && listeners?.splice(i, 1), open()),
       })[key]
-  }) as IttySocket
+  }) as IttySocket<GF>
 
   return socket
 }
+
+// type Chat = { type: 'chat', user: string, text: string }
+
+// connect<IttyFormat>('sad')
+//   .on<Chat>('message', e => {
+//     e.
+//   })
+//   .on<Chat>('chat', (e) => {
+//     e.text
+//   })
+//   .on<Chat>(v => v.type === 'chat', e => {
+//     e.text
+//   })
 
 // GENERICS TESTING
 // connect('test')
