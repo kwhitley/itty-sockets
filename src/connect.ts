@@ -1,4 +1,4 @@
-export type IttySocketEvent<GF> = GF extends IttyFormat
+export type IttySocketEvent<BaseFormat> = BaseFormat extends IttyFormat
   ? 'open' | 'close' | 'message' | 'join' | 'leave'
   : 'open' | 'close' | 'message'
 
@@ -25,10 +25,9 @@ export type ErrorEvent = {
   message: string
 } & Date
 
-export type SendMessage<GF> = GF extends IttyFormat
-  ? <MessageFormat = any>(message: MessageFormat, recipient: string) => IttySocket<GF>
-  : <MessageFormat = any>(message: MessageFormat) => IttySocket<GF>
-
+export type SendMessage<BaseFormat> = BaseFormat extends IttyFormat
+  ? <MessageFormat = any>(message: MessageFormat, recipient: string) => IttySocket<BaseFormat>
+  : <MessageFormat = any>(message: MessageFormat) => IttySocket<BaseFormat>
 
 export type IttySocketOptions = {
   as?: string,
@@ -38,26 +37,28 @@ export type IttySocketOptions = {
 }
 
 export type IttySocketConnect =
-  <GF = object>(channelID: string, options?: IttySocketOptions) => IttySocket<GF>
+  <BaseFormat = object>(channelID: string, options?: IttySocketOptions) => IttySocket<BaseFormat>
 
-export type IttySocket<GF = object> = {
-  open: () => IttySocket<GF>
-  close: () => IttySocket<GF>
-  send: SendMessage<GF>
-  push: SendMessage<GF>
-  remove(type: IttySocketEvent<GF>, listener: () => any): IttySocket<GF>
-  remove(type: string, listener: () => any): IttySocket<GF>
+type IttyFormatEvents<BaseFormat> = {
+  on(type: 'join', listener: (event: JoinEvent) => any): IttySocket<BaseFormat>
+  on(type: 'leave', listener: (event: LeaveEvent) => any): IttySocket<BaseFormat>
+  on(type: 'error', listener: (event: ErrorEvent) => any): IttySocket<BaseFormat>
+}
+export type IttySocket<BaseFormat = object> = {
+  open: () => IttySocket<BaseFormat>
+  close: () => IttySocket<BaseFormat>
+  send: SendMessage<BaseFormat>
+  push: SendMessage<BaseFormat>
+  remove(type: IttySocketEvent<BaseFormat>, listener: () => any): IttySocket<BaseFormat>
+  remove(type: string, listener: () => any): IttySocket<BaseFormat>
 
   // EVENTS
-  on(type: 'open', listener: () => any): IttySocket<GF>
-  on(type: 'close', listener: () => any): IttySocket<GF>
-  on(type: 'join', listener: (event: JoinEvent) => any): IttySocket<GF>
-  on(type: 'leave', listener: (event: LeaveEvent) => any): IttySocket<GF>
-  on(type: 'error', listener: (event: ErrorEvent) => any): IttySocket<GF>
-  on<MessageFormat = GF>(type: 'message', listener: (event: GF & MessageFormat) => any): IttySocket<GF>
-  on<MessageFormat = GF>(type: string, listener: (event: GF & MessageFormat & { type: string }) => any): IttySocket<GF>
-  on<MessageFormat = GF>(type: (event?: any) => any, listener: (event: GF & MessageFormat & { type: string }) => any): IttySocket<GF>
-}
+  on(type: 'open', listener: () => any): IttySocket<BaseFormat>
+  on(type: 'close', listener: () => any): IttySocket<BaseFormat>
+  on<MessageFormat = BaseFormat>(type: 'message', listener: (event: BaseFormat & MessageFormat) => any): IttySocket<BaseFormat>
+  on<MessageFormat = BaseFormat>(type: string, listener: (event: BaseFormat & MessageFormat & { type: string }) => any): IttySocket<BaseFormat>
+  on<MessageFormat = BaseFormat>(type: (event?: any) => any, listener: (event: BaseFormat & MessageFormat & { type: string }) => any): IttySocket<BaseFormat>
+} & (BaseFormat extends IttyFormat ? IttyFormatEvents<BaseFormat> : object)
 
 // @ts-ignore
 export let connect: IttySocketConnect = (channelId: string, options = {}) => {
@@ -121,7 +122,7 @@ export let connect: IttySocketConnect = (channelId: string, options = {}) => {
           open()
         ),
         remove: (
-          type: IttySocketEvent,
+          type: any,
           listener: () => any,
           listeners = events[type],
           i = listeners?.indexOf(listener) ?? -1
@@ -132,20 +133,20 @@ export let connect: IttySocketConnect = (channelId: string, options = {}) => {
   return socket
 }
 
-type Chat = { type: 'chat', user: string, text: string }
+// type Chat = { type: 'chat', user: string, text: string }
 
-connect<IttyFormat>('sad')
-  .on<Chat>('message', e => {
-    e.text
-  })
-  .on<Chat>('chat', (e) => {
-    e.text
-  })
-  .on<Chat>(v => v.type === 'chat', e => {
-    e.text
-  })
-  // .send() // test for (message) vs (message, recipient) based on GF type
-  .remove('leave', () => {})
+// connect<IttyFormat>('sad')
+//   .on<Chat>('message', e => {
+//     e.text
+//   })
+//   .on<Chat>('chat', (e) => {
+//     e.text
+//   })
+//   .on<Chat>(v => v.type === 'chat', e => {
+//     e.text
+//   })
+//   // .send() // test for (message) vs (message, recipient) based on BaseFormat type
+//   .remove('open', () => {})
 
 
 // GENERICS TESTING
