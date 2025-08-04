@@ -1,4 +1,6 @@
-export type IttySocketEvent = 'open' | 'close' | 'message' | 'join' | 'leave'
+export type IttySocketEvent<GF> = GF extends IttyFormat
+  ? 'open' | 'close' | 'message' | 'join' | 'leave'
+  : 'open' | 'close' | 'message'
 
 type Date = { date: Date }
 type UserDetails = { uid: string, alias?: string }
@@ -23,15 +25,28 @@ export type ErrorEvent = {
   message: string
 } & Date
 
-export type SendMessage = <MessageFormat = any>(message: MessageFormat, recipient?: string) => IttySocket<GF>
+export type SendMessage<GF> = GF extends IttyFormat
+  ? <MessageFormat = any>(message: MessageFormat, recipient: string) => IttySocket<GF>
+  : <MessageFormat = any>(message: MessageFormat) => IttySocket<GF>
+
+
+export type IttySocketOptions = {
+  as?: string,
+  alias?: string,
+  echo?: true,
+  announce?: true,
+}
+
+export type IttySocketConnect =
+  <GF = object>(channelID: string, options?: IttySocketOptions) => IttySocket<GF>
 
 export type IttySocket<GF = object> = {
-  open: () => IttySocket<GF>,
-  close: () => IttySocket<GF>,
-  connected: boolean,
-  send: SendMessage,
-  push: SendMessage,
-  remove(type: IttySocketEvent, listener: () => any): IttySocket<GF>
+  open: () => IttySocket<GF>
+  close: () => IttySocket<GF>
+  send: SendMessage<GF>
+  push: SendMessage<GF>
+  remove(type: IttySocketEvent<GF>, listener: () => any): IttySocket<GF>
+  remove(type: string, listener: () => any): IttySocket<GF>
 
   // EVENTS
   on(type: 'open', listener: () => any): IttySocket<GF>
@@ -44,14 +59,8 @@ export type IttySocket<GF = object> = {
   on<MessageFormat = GF>(type: (event?: any) => any, listener: (event: GF & MessageFormat & { type: string }) => any): IttySocket<GF>
 }
 
-export type IttySocketOptions = {
-  as?: string,
-  alias?: string,
-  echo?: true,
-  announce?: true,
-}
-
-export let connect = <GF = object>(channelId: string, options: IttySocketOptions = {}): IttySocket<GF> => {
+// @ts-ignore
+export let connect: IttySocketConnect = (channelId: string, options = {}) => {
   let ws: WebSocket | null,
       closeAfterSend = 0,
       queue: string[] = [],
@@ -62,7 +71,7 @@ export let connect = <GF = object>(channelId: string, options: IttySocketOptions
     if (ws) return socket
 
     // @ts-ignore - options will be cast as string regardless of what is passed
-    ws = new WebSocket((/^wss?:/.test(channelId) ? channelId : 'wss://ittysockets.io/c/' + channelId) + '?' + new URLSearchParams(options))
+    ws = new WebSocket((/^wss?:/.test(channelId) ? channelId : 'wss://itty.ws/c/' + channelId) + '?' + new URLSearchParams(options))
 
     ws.onmessage = (
       event: any,
@@ -99,10 +108,11 @@ export let connect = <GF = object>(channelId: string, options: IttySocketOptions
       ({
         open,
         close: () => (ws?.readyState == 1 ? ws.close() : closeAfterSend = 1, socket),
-        push: (message: any, recipient?: string) => (closeAfterSend = 1, socket.send(message, recipient)),
+        // @ts-ignore
+        push: (message: any, recipient?: string) => (closeAfterSend = 1, socket.send(message, recipient!)),
         send: (message: any, recipient?: string) => (
           message = JSON.stringify(message),
-          message = recipient ? '@@' + recipient + '@@' + message : message,
+          message = recipient ? '\x1F' + recipient + '\x1F' + message : message,
           ws?.readyState == 1 ? (ws.send(message), socket) : (queue.push(message), open())
         ),
         on: (type: IttySocketEvent | ((event?: any) => any), listener: () => any) => (
@@ -117,23 +127,26 @@ export let connect = <GF = object>(channelId: string, options: IttySocketOptions
           i = listeners?.indexOf(listener) ?? -1
         ) => (~i && listeners?.splice(i, 1), open()),
       })[key]
-  }) as IttySocket<GF>
+  })
 
   return socket
 }
 
-// type Chat = { type: 'chat', user: string, text: string }
+type Chat = { type: 'chat', user: string, text: string }
 
-// connect('sad')
-//   .on<Chat>('message', e => {
-//     e.text
-//   })
-//   .on<Chat>('chat', (e) => {
-//     e.text
-//   })
-//   .on<Chat>(v => v.type === 'chat', e => {
-//     e.text
-//   })
+connect<IttyFormat>('sad')
+  .on<Chat>('message', e => {
+    e.text
+  })
+  .on<Chat>('chat', (e) => {
+    e.text
+  })
+  .on<Chat>(v => v.type === 'chat', e => {
+    e.text
+  })
+  // .send() // test for (message) vs (message, recipient) based on GF type
+  .remove('leave', () => {})
+
 
 // GENERICS TESTING
 // connect('test')
