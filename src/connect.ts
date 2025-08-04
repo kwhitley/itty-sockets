@@ -25,7 +25,7 @@ export type ErrorEvent = {
 
 export type SendMessage = <MessageFormat = any>(message: MessageFormat, recipient?: string) => IttySocket<GF>
 
-export type IttySocket<GF = {}> = {
+export type IttySocket<GF = object> = {
   open: () => IttySocket<GF>,
   close: () => IttySocket<GF>,
   connected: boolean,
@@ -51,7 +51,7 @@ export type IttySocketOptions = {
   announce?: true,
 }
 
-export let connect = <GF = {}>(channelId: string, options: IttySocketOptions = {}): IttySocket<GF> => {
+export let connect = <GF = object>(channelId: string, options: IttySocketOptions = {}): IttySocket<GF> => {
   let ws: WebSocket | null,
       closeAfterSend = 0,
       queue: string[] = [],
@@ -124,9 +124,9 @@ export let connect = <GF = {}>(channelId: string, options: IttySocketOptions = {
 
 // type Chat = { type: 'chat', user: string, text: string }
 
-// connect<IttyFormat>('sad')
+// connect('sad')
 //   .on<Chat>('message', e => {
-//     e.
+//     e.text
 //   })
 //   .on<Chat>('chat', (e) => {
 //     e.text
