@@ -182,7 +182,7 @@ const tests: TestTree = {
               // confirm props are not overridden
               expect(e.uid).not.toBe('foo')
               expect(e.alias).not.toBe('bar')
-              expect(e.date).not.toBe(date)
+              expect(e.date).not.toBe(+date)
               resolve()
             })
             .send({ foo: 'bar', uid: 'foo', alias: 'bar', date }),
@@ -271,7 +271,7 @@ const tests: TestTree = {
               expect(text).toBe('test')
               expect(e.type).toBe('chat') // currently giving a TS error (incorrect)
               expect(e.uid).toBeTypeOf('string')
-              expect(e.date).toBeInstanceOf(Date)
+              expect(e.date).toBeTypeOf('number')
               expect(e.user).toBe(e.message.user)
               resolve()
             })
@@ -416,7 +416,7 @@ const tests: TestTree = {
               expect(e.users).toBe(1)
               expect(e.uid).toBeUndefined()
               expect(e.alias).toBeUndefined()
-              expect(e.date).toBeInstanceOf(Date)
+              expect(e.date).toBeTypeOf('number')
               resolve()
             }),
         'with { announce: true }': async ({ getChannel, resolve }) =>
@@ -425,7 +425,7 @@ const tests: TestTree = {
               expect(e.users).toBe(1)
               expect(e.uid).toBeTypeOf('string')
               expect(e.alias).toBe('test-user')
-              expect(e.date).toBeInstanceOf(Date)
+              expect(e.date).toBeTypeOf('number')
               resolve()
             })
       },
@@ -436,7 +436,7 @@ const tests: TestTree = {
               expect(e.users).toBe(1)
               expect(e.uid).toBeUndefined()
               expect(e.alias).toBeUndefined()
-              expect(e.date).toBeInstanceOf(Date)
+              expect(e.date).toBeTypeOf('number')
               resolve()
             })
           getChannel().push('test')
@@ -447,7 +447,7 @@ const tests: TestTree = {
               expect(e.users).toBe(1)
               expect(e.uid).toBeTypeOf('string')
               expect(e.alias).toBe('test-user')
-              expect(e.date).toBeInstanceOf(Date)
+              expect(e.date).toBeTypeOf('number')
               resolve()
             })
           getChannel({ announce: true, as: 'test-user' }).push('test')
@@ -460,7 +460,7 @@ const tests: TestTree = {
               expect(e.message).toBe('test')
               expect(e.uid).toBeTypeOf('string')
               expect(e.alias).toBeUndefined()
-              expect(e.date).toBeInstanceOf(Date)
+              expect(e.date).toBeTypeOf('number')
               resolve()
             })
             .send('test'),
@@ -470,7 +470,7 @@ const tests: TestTree = {
               expect(e.message).toBe('test')
               expect(e.uid).toBeTypeOf('string')
               expect(e.alias).toBe('test-user')
-              expect(e.date).toBeInstanceOf(Date)
+              expect(e.date).toBeTypeOf('number')
               resolve()
             })
             .send('test'),
