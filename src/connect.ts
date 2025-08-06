@@ -1,4 +1,4 @@
-type IttySocketEvent<BaseFormat> = BaseFormat extends IttyFormat
+type IttySocketEvent<BaseFormat> = BaseFormat extends UseItty
   ? 'open' | 'close' | 'message' | 'join' | 'leave'
   : 'open' | 'close' | 'message'
 
@@ -6,7 +6,7 @@ type Date = { date: Date }
 type UserDetails = { uid: string, alias?: string }
 type OptionalUserDetails = { uid?: string, alias?: string }
 
-export type IttyFormat<MessageType = any> = {
+export type UseItty<MessageType = any> = {
   message: MessageType
 } & UserDetails & Date
 
@@ -34,20 +34,20 @@ export type IttySocketOptions = {
 
 export interface IttySocketConnect {
   <BaseFormat = object>(
-    ...args: BaseFormat extends IttyFormat
+    ...args: BaseFormat extends UseItty
       ? [channelID: string, options?: IttySocketOptions]
       : [url: string, queryParams?: any]
   ): IttySocket<BaseFormat>
 }
 
-type IttyFormatEvents<BaseFormat> = {
+type UseIttyEvents<BaseFormat> = {
   on(type: 'join', listener: (event: JoinEvent) => any): IttySocket<BaseFormat>
   on(type: 'leave', listener: (event: LeaveEvent) => any): IttySocket<BaseFormat>
   on(type: 'error', listener: (event: ErrorEvent) => any): IttySocket<BaseFormat>
 }
 
-type SendMessage<BaseFormat> = BaseFormat extends IttyFormat
-  ? <MessageFormat = any>(message: MessageFormat, recipient: string) => IttySocket<BaseFormat>
+type SendMessage<BaseFormat> = BaseFormat extends UseItty
+  ? <MessageFormat = any>(message: MessageFormat, uid: string) => IttySocket<BaseFormat>
   : <MessageFormat = any>(message: MessageFormat) => IttySocket<BaseFormat>
 
 export type IttySocket<BaseFormat = object> = {
@@ -64,7 +64,7 @@ export type IttySocket<BaseFormat = object> = {
   on<MessageFormat = BaseFormat>(type: 'message', listener: (event: BaseFormat & MessageFormat) => any): IttySocket<BaseFormat>
   on<MessageFormat = BaseFormat>(type: string, listener: (event: BaseFormat & MessageFormat & { type: string }) => any): IttySocket<BaseFormat>
   on<MessageFormat = BaseFormat>(type: (event?: any) => any, listener: (event: BaseFormat & MessageFormat & { type: string }) => any): IttySocket<BaseFormat>
-} & (BaseFormat extends IttyFormat ? IttyFormatEvents<BaseFormat> : object)
+} & (BaseFormat extends UseItty ? UseIttyEvents<BaseFormat> : object)
 
 export let connect: IttySocketConnect = (channelId: string, options = {}) => {
   let ws: WebSocket | null,
@@ -137,18 +137,18 @@ export let connect: IttySocketConnect = (channelId: string, options = {}) => {
 
 // type Chat = { type: 'chat', user: string, text: string }
 
-// connect<IttyFormat>('doo')
+// connect<UseItty>('doo')
 //   .on<Chat>('message', e => {
 //     e
 //   })
 //   .on<Chat>('chat', (e) => {
 //     e.text
-//   })s
+//   })
 //   .on<Chat>(v => v.type === 'chat', e => {
-//     e.text
+//     e.texts
 //   })
 //   // .send() // test for (message) vs (message, recipient) based on BaseFormat type
-//   .remove('open', () => {})
+//   .remove('leave',
 
 
 // GENERICS TESTING
