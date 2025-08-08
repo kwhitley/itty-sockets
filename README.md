@@ -18,7 +18,7 @@
 
 ---
 
-### Type-safe WebSocket routing in 512 bytes
+### The last WebSocket client you'll need : 512 bytes, all-in.
 
 ## Features ✨
 1. **DX perks** - JSON-in/out, queued messages, easy-reconnect, chainable everything.
