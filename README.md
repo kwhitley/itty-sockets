@@ -91,7 +91,22 @@ let connect=(e,s={})=>{let p,a=0,n=[],t=[],o={},l=()=>(p||(p=new WebSocket((/^ws
 *Note: This will lose TypeScript support.*
 
 ## Example 2 - Receiving basic messages
-let's assume the following 2 messages are sent:
+Assume the following simple client
+```ts
+import { connect } from 'itty-sockets'
+
+connect('wss://example.com')
+
+  // listen for every message
+  .on('message', console.log)
+
+  // and just { type: 'chat' }
+  .on('chat', 
+    ({ user, text }) => console.log(`${user} says: ${text}`)
+  )
+```
+
+Now let's assume the following 2 messages are sent:
 ```json
 {
   "type": "chat",
@@ -107,19 +122,13 @@ let's assume the following 2 messages are sent:
 }
 ```
 
-Now we'll see what the following message handlers receive:
-```ts
-import { connect } from 'itty-sockets'
+This will output the following to the console:
+```
+{ type: "chat", user: "Kevin", text: "Hey!" }
 
-connect('wss://example.com')
-  .on('message', console.log)
-  // { type: 'chat', user: 'Kevin', text: 'Hey!' }
-  // { date: 1754659171196, items: [1, 2, 3] }
+{ date: 1754659171196, items: [1, 2, 3] }
 
-  .on('chat', 
-    ({ user, text }) => console.log(`${user} says: ${text}`)
-  )
-  // Kevin says: Hey!
+"Kevin says: Hey!"
 ```
 
 ## Example 3 - Reconnection
