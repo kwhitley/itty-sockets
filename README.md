@@ -14,45 +14,57 @@
 [![Issues](https://img.shields.io/github/issues/kwhitley/itty-sockets?style=flat-square)](https://github.com/kwhitley/itty-sockets/issues)
 [![Discord](https://img.shields.io/discord/832353585802903572?label=Discord&logo=Discord&style=flat-square&logoColor=fff)](https://discord.gg/53vyrZAu9u)
 
-### [Documentation](https://ittysockets.io) &nbsp;| &nbsp; [Discord](https://discord.gg/53vyrZAu9u)
+### [Documentation](https://itty.dev/itty-sockets) &nbsp;| &nbsp; [Discord](https://discord.gg/53vyrZAu9u)
 
 ---
 
 ### Type-safe WebSocket routing in 512 bytes
 
 ## Features ✨
-1. **Quality of Life Improvements (over native WebSocket)**
-   - auto JSON handling
-   - top-level payload access (`text` instead of `e.data.text`)
-   - easy reconnections
-   - message queuing eliminates race conditions
-   - chainable API
-1. **Powerful Routing**
-   - all messages - `.on('message', data => console.log(data))`
-   - custom types - `.on('chat', ({ text }) => console.log(text))`
-   - custom filters - `.on(isOver20, ({ value }) => console.log(value))`
-1. **Type-safety**
-   - `.on<Chat>('chat', ({ text }) => console.log(text))`
-   - `.send<Chat>({ type: 'chat', text: 'hello' })`
+1. **DX perks** - JSON-in/out, queued messages, easy-reconnect, chainable everything.
 1. **Works with any JSON-based WebSocket server**
-1. **Tiny footprint** - smaller than virtually any WebSocket boilerplate
+1. **Powerful Routing**
+   - Listen for all messages
+     ```ts
+     .on('message', data => console.log(data))
+     ```
+   - Only specific types
+     ```ts
+     // matches any data with { type: 'chat' }
+     .on('chat', ({ text }) => console.log(text))
+     ```
+   - or fully custom filters
+     ```ts
+     // matches only messages where data.value > 20
+     .on(
+       ({ value }) => value > 20), // filter function
+       ({ value }) => console.log(value),
+     )
+     ```
+1. **Type-safe message handling**
+1. **Tiny footprint** - 512 bytes, all-in.
+1. **Optional usage with free/public/zero-config [itty.ws](https://itty.ws) service**
 
 ## Basic Example
 ```ts
 import { connect } from 'itty-sockets'
 
-const ws = connect('wss://example.com')
+// connect to the channel
+const channel = connect('wss://example.com')
 
-ws
+channel
+  // log all messages
   .on('message', e => console.log(e.message))
+
+  // send some messages
   .send('hey!')
   .send({ foo: 'bar' })
 ```
 
-## Optional use with `itty.ws` public server
-`itty-sockets` has been designed to work with the public itty.ws service for even easier integrations.  With this path, it's possible to add realtime features without hosting a backend server at all.  We recommend using this for testing, prototyping, or simple projects. As your needs expand, simply replace itty.ws with your own server(s) - nothing in the client changes.
+## Optional use with `itty.ws` public, privacy-first server
+`itty-sockets` has been designed to work with the public [itty.ws](https://itty.ws) service for even easier integrations.  With this path, it's possible to add realtime features without hosting a backend server at all.  We recommend using this for testing, prototyping, or simple projects. As your needs expand, you can always replace [itty.ws](https://itty.ws) with your own server(s) - nothing in the client changes.
 
-Using itty.ws channels provides a few features to the client (fully typed by passing the `UseItty` generic to `connect`):
+Using [itty.ws](https://itty.ws) channels provides a few features to the client (fully typed by passing the `UseItty` generic to `connect`):
 
 1. `connect<UseItty>('my-channel')` - connect to a channel and go
 1. adds `uid`, `alias`, and `date` to all messages
@@ -62,6 +74,10 @@ Using itty.ws channels provides a few features to the client (fully typed by pas
 ## Installation
 
 **Option 1: Import**
+```bash
+npm install itty-sockets
+```
+
 ```ts
 import { connect } from 'itty-sockets'
 ```
@@ -72,9 +88,52 @@ import { connect } from 'itty-sockets'
 let connect=(e,s={})=>{let p,a=0,n=[],t=[],o={},l=()=>(p||(p=new WebSocket((/^wss?:/.test(e)?e:"wss://itty.ws/c/"+e)+"?"+new URLSearchParams(s)),p.onmessage=(e,s=JSON.parse(e.data),p=s?.message,a={...null==p?.[0]&&p,...s})=>{o[s?.type??p?.type]?.map((e=>e(a))),s?.type||o.message?.map((e=>e(a))),t.map((([e,s])=>e(a)&&s(a)))},p.onopen=()=>(n.splice(0).map((e=>p?.send(e))),o.open?.map((e=>e())),a&&p?.close()),p.onclose=()=>(a=0,p=null,o.close?.map((e=>e())))),m),m=new Proxy(l,{get:(e,s)=>({open:l,close:()=>(1==p?.readyState?p.close():a=1,m),push:(e,s)=>(a=1,m.send(e,s)),send:(e,s)=>(e=JSON.stringify(e),e=s?""+s+""+e:e,1==p?.readyState?(p.send(e),m):(n.push(e),l())),on:(e,s)=>(s&&(e?.[0]?(o[e]??=[]).push(s):t.push([e,s])),l()),remove:(e,s,p=o[e],a=p?.indexOf(s)??-1)=>(~a&&p?.splice(a,1),l())}[s])});return m};
 ```
 <!-- END SNIPPET -->
-Note: This will lose TypeScript support, but is great for adding to your browser console (via script extensions, etc).
+*Note: This will lose TypeScript support.*
 
-## Next Steps
+## Example 2 - Receiving basic messages
+let's assume the following 2 messages are sent:
+```json
+{
+  "type": "chat",
+  "user": "Kevin",
+  "text": "Hey!"
+}
+```
 
-- [Getting Started](https://itty.dev/itty-sockets/getting-started) - Basic setup and first connections
+```json
+{
+  "date": 1754659171196,
+  "items": [1, 2, 3],
+}
+```
+
+Now we'll see what the following message handlers receive:
+```ts
+import { connect } from 'itty-sockets'
+
+connect('wss://example.com')
+  .on('message', console.log)
+  // { type: 'chat', user: 'Kevin', text: 'Hey!' }
+  // { date: 1754659171196, items: [1, 2, 3] }
+
+  .on('chat', 
+    ({ user, text }) => console.log(`${user} says: ${text}`)
+  )
+  // Kevin says: Hey!
+```
+
+## Example 3 - Reconnection
+Using `itty-sockets`, you can safely fire `.open()` on the connection at any time, even if already connected.  All listeners will continue to work perfectly once reconnected.
+
+```ts
+const channel = connect('wss://example.com')
+                  .on('message', console.log)
+                  .on('open', () => console.log('connected'))
+                  .on('close', () => console.log('disconnected'))
+
+// we'll just reconnect every second - this is safe!
+setInterval(channel.open, 1000)
+```
+
+## See the [full documentation](https://itty.dev/itty-sockets) to continue your journey!
 
