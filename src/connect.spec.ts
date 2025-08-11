@@ -246,7 +246,7 @@ const tests: TestTree = {
         'registers an event listener that is called when an error occurs': async ({ channel, resolve }) =>
           channel
             .on('error', e => {
-              expect(e.message).toBe('test')
+              expect(e.message).toContain('non-existent-user')
               resolve()
             })
             .send('test', 'non-existent-user')
@@ -280,18 +280,18 @@ const tests: TestTree = {
       },
       '.on(\'{custom-type}\', listener)': {
         'catches when message.type matches the custom type': async ({ channel, getChannel, resolve, spy }) => {
-           channel.on<{ user: string, text: string }>('chat', (e) => {
-              const { user, text } = e
-              expect(user).toBe('test-user')
-              expect(text).toBe('test')
-              expect(e.type).toBe('chat') // currently giving a TS error (incorrect)
-              expect(e.uid).toBeTypeOf('string')
-              expect(e.date).toBeTypeOf('number')
-              expect(e.user).toBe(e.message.user)
-              resolve()
-            })
-            .on('message', spy)
-            getChannel().push({ type: 'chat', user: 'test-user', text: 'test' }) //
+           getChannel()
+             .on<{ user: string, text: string }>('chat', (e) => {
+                const { user, text } = e
+                expect(user).toBe('test-user')
+                expect(text).toBe('test')
+                expect(e.type).toBe('chat') // currently giving a TS error (incorrect)
+                expect(e.uid).toBeTypeOf('string')
+                expect(e.date).toBeTypeOf('number')
+                expect(e.user).toBe(e.message.user)
+                resolve()
+              })
+            getChannel().send({ type: 'chat', user: 'test-user', text: 'test' }) //
         },
         'will still trigger "message" listeners': async ({ getChannel, resolve, spy }) =>
           getChannel({ echo: true })
@@ -456,8 +456,8 @@ const tests: TestTree = {
             })
           getChannel().push('test')
         },
-        'with { announce: true }': async ({ channel,getChannel, resolve }) => {
-          channel
+        'with { announce: true }': async ({ channel, getChannel, resolve }) => {
+          getChannel()
             .on('leave', e => {
               expect(e.users).toBe(1)
               expect(e.uid).toBeTypeOf('string')
