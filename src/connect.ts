@@ -47,7 +47,7 @@ type UseIttyEvents<BaseFormat> = {
 }
 
 type SendMessage<BaseFormat> = BaseFormat extends UseItty
-  ? <MessageFormat = any>(message: MessageFormat, uid: string) => IttySocket<BaseFormat>
+  ? <MessageFormat = any>(message: MessageFormat, uid?: string) => IttySocket<BaseFormat>
   : <MessageFormat = any>(message: MessageFormat) => IttySocket<BaseFormat>
 
 export type IttySocket<BaseFormat = object> = {

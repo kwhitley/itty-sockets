@@ -1,15 +1,21 @@
 import { describe, afterAll, expect, it, mock } from 'bun:test'
-import { connect, type IttySocket } from './connect'
+import { connect, type IttySocket, type UseItty } from './connect'
 
 type TestLeaf = (args: {
-  channel: IttySocket,
+  channel: IttySocket<UseItty>,
   resolve: () => void,
   spy: () => void,
-  getChannel: (options?: any) => IttySocket
+  getChannel: (options?: any) => IttySocket<UseItty>
 }) => void
 
 type TestTree = {
   [key: string]: TestTree | TestLeaf
+}
+
+type ChatMessage = {
+  type: 'chat',
+  user: string,
+  text: string,
 }
 
 const EXPOSED_METHODS = ['send', 'push', 'on', 'remove', 'close', 'open']
@@ -31,7 +37,7 @@ const tests: TestTree = {
       global.WebSocket = mockFn
 
       connect('my-channel', { a: 'b', c: 'd' } as any).open()
-      expect(mockFn.mock.calls[0][0]).toBe('wss://ittysockets.io/c/my-channel?a=b&c=d')
+      expect(mockFn.mock.calls[0][0]).toBe('wss://itty.ws/c/my-channel?a=b&c=d')
 
       connect('ws://custom.server/path').open()
       expect(mockFn.mock.calls[1][0]).toBe('ws://custom.server/path?')
@@ -173,7 +179,7 @@ const tests: TestTree = {
             .send({ foo: 'bar' }),
         'message props do not override event base props': async ({ getChannel, resolve }, date = new Date()) =>
           getChannel({ echo: true, alias: 'test-user' })
-            .on('message', (e) => {
+            .on<{ foo: string }>('message', (e) => {
               expect(e.foo).toBe('bar')
               // confirm types are correct
               expect(e.uid).toBeTypeOf('string')
@@ -236,6 +242,15 @@ const tests: TestTree = {
               resolve()
             })
       },
+      '.on(\'error\', listener)': {
+        'registers an event listener that is called when an error occurs': async ({ channel, resolve }) =>
+          channel
+            .on('error', e => {
+              expect(e.message).toBe('test')
+              resolve()
+            })
+            .send('test', 'non-existent-user')
+      },
       '.on(\'leave\', listener)': {
         'registers an event listener that is called when a user leaves the channel': async ({ channel, getChannel,resolve }) => {
             channel.on('leave', e => {
@@ -291,7 +306,7 @@ const tests: TestTree = {
         'will include custom payloads at top level and under e.message': async ({ getChannel, resolve, spy }) =>
           getChannel({ echo: true })
             .on('message', spy)
-            .on('chat', (e) => {
+            .on<ChatMessage>('chat', (e) => {
                expect(e.type).toBe('chat')
                expect(e.user).toBe('test-user')
                expect(e.text).toBe('test')
@@ -482,7 +497,7 @@ const tests: TestTree = {
 // setup function for each test
 const setup = () => {
   const id = 'itty:itty-sockets:test-' + Math.random().toString(36).slice(2)
-  const getChannel = (options = {}) => {
+  const getChannel = (options = {}): IttySocket<UseItty> => {
     const channel = connect(id, options)
     OPEN_CHANNELS.push(channel)
     return channel
@@ -490,7 +505,7 @@ const setup = () => {
 
   return {
     getChannel,
-    channel: getChannel(id),
+    channel: getChannel(id) as IttySocket<UseItty>,
     spy: mock(() => {}),
   }
 }
