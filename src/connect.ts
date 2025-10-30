@@ -2,28 +2,32 @@ type IttySocketEvent<BaseFormat> = BaseFormat extends UseItty
   ? 'open' | 'close' | 'message' | 'join' | 'leave'
   : 'open' | 'close' | 'message'
 
-type Date = { date: Date }
+type Timestamp = { date: number }
 type UserDetails = { uid: string, alias?: string }
 type OptionalUserDetails = { uid?: string, alias?: string }
 
 export type UseItty<MessageType = any> = {
   message: MessageType
-} & UserDetails & Date
+} & UserDetails & Timestamp
+
+export type MessageEvent<MessageType = any> = {
+  message: MessageType
+} & Timestamp & OptionalUserDetails
 
 export type JoinEvent = {
   type: 'join'
   users: number
-} & Date & OptionalUserDetails
+} & Timestamp & OptionalUserDetails
 
 export type LeaveEvent = {
   type: 'leave'
   users: number
-} & Date & OptionalUserDetails
+} & Timestamp & OptionalUserDetails
 
 export type ErrorEvent = {
   type: 'error'
   message: string
-} & Date
+} & Timestamp
 
 export type IttySocketOptions = {
   as?: string,

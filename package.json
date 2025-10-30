@@ -1,13 +1,13 @@
 {
   "name": "itty-sockets",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "WebSockets : simplified and minified.",
   "type": "module",
   "exports": {
     ".": {
       "import": "./connect.mjs",
       "types": "./connect.d.ts",
-      "require": "./connect.cjs"
+      "require": "./connect.js"
     }
   },
   "scripts": {
