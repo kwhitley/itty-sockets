@@ -1,12 +1,14 @@
-export type IttySocketEvent = 'open' | 'close' | 'message' | 'join' | 'leave'
+type IttySocketEvent<BaseFormat> = BaseFormat extends UseItty
+  ? 'open' | 'close' | 'message' | 'join' | 'leave'
+  : 'open' | 'close' | 'message'
 
 type Date = { date: Date }
 type UserDetails = { uid: string, alias?: string }
 type OptionalUserDetails = { uid?: string, alias?: string }
 
-export type MessageEvent<MessageType = any> = {
+export type UseItty<MessageType = any> = {
   message: MessageType
-} & Date & UserDetails & MessageType
+} & UserDetails & Date
 
 export type JoinEvent = {
   type: 'join'
@@ -23,26 +25,6 @@ export type ErrorEvent = {
   message: string
 } & Date
 
-export type SendMessage = <MessageFormat = any>(message: MessageFormat, recipient?: string) => IttySocket
-
-export type IttySocket = {
-  open: () => IttySocket,
-  close: () => IttySocket,
-  connected: boolean,
-  send: SendMessage,
-  push: SendMessage,
-
-  // Specific overloads without generics come first
-  on(type: 'join', listener: (event: JoinEvent) => any): IttySocket
-  on(type: 'leave', listener: (event: LeaveEvent) => any): IttySocket
-  on(type: 'error', listener: (event: ErrorEvent) => any): IttySocket
-  on<MessageFormat = any>(type: 'message', listener: (event: MessageEvent<MessageFormat>) => any): IttySocket
-  on<MessageFormat = any>(type: string, listener: (event: MessageEvent<MessageFormat & { type: string }>) => any): IttySocket
-  on<MessageFormat = any>(type: (event?: any) => any, listener: (event: MessageEvent<MessageFormat & { type: string }>) => any): IttySocket
-
-  remove(type: IttySocketEvent, listener: () => any): IttySocket
-}
-
 export type IttySocketOptions = {
   as?: string,
   alias?: string,
@@ -50,7 +32,41 @@ export type IttySocketOptions = {
   announce?: true,
 }
 
-export let connect = (channelId: string, options: IttySocketOptions = {}): IttySocket => {
+export interface IttySocketConnect {
+  <BaseFormat = object>(
+    ...args: BaseFormat extends UseItty
+      ? [channelID: string, options?: IttySocketOptions]
+      : [url: string, queryParams?: any]
+  ): IttySocket<BaseFormat>
+}
+
+type UseIttyEvents<BaseFormat> = {
+  on(type: 'join', listener: (event: JoinEvent) => any): IttySocket<BaseFormat>
+  on(type: 'leave', listener: (event: LeaveEvent) => any): IttySocket<BaseFormat>
+  on(type: 'error', listener: (event: ErrorEvent) => any): IttySocket<BaseFormat>
+}
+
+type SendMessage<BaseFormat> = BaseFormat extends UseItty
+  ? <MessageFormat = any>(message: MessageFormat, uid?: string) => IttySocket<BaseFormat>
+  : <MessageFormat = any>(message: MessageFormat) => IttySocket<BaseFormat>
+
+export type IttySocket<BaseFormat = object> = {
+  open: () => IttySocket<BaseFormat>
+  close: () => IttySocket<BaseFormat>
+  send: SendMessage<BaseFormat>
+  push: SendMessage<BaseFormat>
+  remove(type: IttySocketEvent<BaseFormat>, listener: () => any): IttySocket<BaseFormat>
+  remove(type: string, listener: () => any): IttySocket<BaseFormat>
+
+  // EVENTS
+  on(type: 'open', listener: () => any): IttySocket<BaseFormat>
+  on(type: 'close', listener: () => any): IttySocket<BaseFormat>
+  on<MessageFormat = BaseFormat>(type: 'message', listener: (event: BaseFormat & MessageFormat) => any): IttySocket<BaseFormat>
+  on<MessageFormat = BaseFormat>(type: string, listener: (event: BaseFormat & MessageFormat & { type: string }) => any): IttySocket<BaseFormat>
+  on<MessageFormat = BaseFormat>(type: (event?: any) => any, listener: (event: BaseFormat & MessageFormat & { type: string }) => any): IttySocket<BaseFormat>
+} & (BaseFormat extends UseItty ? UseIttyEvents<BaseFormat> : object)
+
+export let connect: IttySocketConnect = (channelId: string, options = {}) => {
   let ws: WebSocket | null,
       closeAfterSend = 0,
       queue: string[] = [],
@@ -61,7 +77,7 @@ export let connect = (channelId: string, options: IttySocketOptions = {}): IttyS
     if (ws) return socket
 
     // @ts-ignore - options will be cast as string regardless of what is passed
-    ws = new WebSocket((/^wss?:/.test(channelId) ? channelId : 'wss://ittysockets.io/c/' + channelId) + '?' + new URLSearchParams(options))
+    ws = new WebSocket((/^wss?:/.test(channelId) ? channelId : 'wss://itty.ws/c/' + channelId) + '?' + new URLSearchParams(options))
 
     ws.onmessage = (
       event: any,
@@ -70,7 +86,6 @@ export let connect = (channelId: string, options: IttySocketOptions = {}): IttyS
       eventPayload = {
         ...(payload?.[0] == null && payload),
         ...parsed,
-        ...(parsed.date && { date: new Date(parsed.date) })
       },
     ) => {
       events[parsed?.type ?? payload?.type]?.map(listener => listener(eventPayload)) // all custom messages
@@ -93,34 +108,48 @@ export let connect = (channelId: string, options: IttySocketOptions = {}): IttyS
     return socket
   }
 
-  // @ts-ignore - dark itty magic
-  let socket = new Proxy(open, {
+  let socket: any = new Proxy(open, {
     get: (_, key: string) =>
       ({
         open,
         close: () => (ws?.readyState == 1 ? ws.close() : closeAfterSend = 1, socket),
-        push: (message: any, recipient?: string) => (closeAfterSend = 1, socket.send(message, recipient)),
+        push: (message: any, recipient?: string) => (closeAfterSend = 1, socket.send(message, recipient!)),
         send: (message: any, recipient?: string) => (
           message = JSON.stringify(message),
-          message = recipient ? '@@' + recipient + '@@' + message : message,
+          message = recipient ? '\x1F' + recipient + '\x1F' + message : message,
           ws?.readyState == 1 ? (ws.send(message), socket) : (queue.push(message), open())
         ),
-        on: (type: IttySocketEvent | ((event?: any) => any), listener: () => any) => (
-          // @ts-ignore
+        on: (type: any | ((event?: any) => any), listener: () => any) => (
           listener && (type?.[0] ? (events[type] ??= []).push(listener) : filters.push([type, listener])),
           open()
         ),
         remove: (
-          type: IttySocketEvent,
+          type: any,
           listener: () => any,
           listeners = events[type],
           i = listeners?.indexOf(listener) ?? -1
         ) => (~i && listeners?.splice(i, 1), open()),
       })[key]
-  }) as IttySocket
+  })
 
   return socket
 }
+
+// type Chat = { type: 'chat', user: string, text: string }
+
+// connect<UseItty>('doo')
+//   .on<Chat>('message', e => {
+//     e
+//   })
+//   .on<Chat>('chat', (e) => {
+//     e.text
+//   })
+//   .on<Chat>(v => v.type === 'chat', e => {
+//     e.texts
+//   })
+//   // .send() // test for (message) vs (message, recipient) based on BaseFormat type
+//   .remove('leave',
+
 
 // GENERICS TESTING
 // connect('test')

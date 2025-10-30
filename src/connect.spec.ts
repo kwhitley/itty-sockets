@@ -1,15 +1,21 @@
 import { describe, afterAll, expect, it, mock } from 'bun:test'
-import { connect, type IttySocket } from './connect'
+import { connect, type IttySocket, type UseItty } from './connect'
 
 type TestLeaf = (args: {
-  channel: IttySocket,
+  channel: IttySocket<UseItty>,
   resolve: () => void,
   spy: () => void,
-  getChannel: (options?: any) => IttySocket
+  getChannel: (options?: any) => IttySocket<UseItty>
 }) => void
 
 type TestTree = {
   [key: string]: TestTree | TestLeaf
+}
+
+type ChatMessage = {
+  type: 'chat',
+  user: string,
+  text: string,
 }
 
 const EXPOSED_METHODS = ['send', 'push', 'on', 'remove', 'close', 'open']
@@ -31,7 +37,7 @@ const tests: TestTree = {
       global.WebSocket = mockFn
 
       connect('my-channel', { a: 'b', c: 'd' } as any).open()
-      expect(mockFn.mock.calls[0][0]).toBe('wss://ittysockets.io/c/my-channel?a=b&c=d')
+      expect(mockFn.mock.calls[0][0]).toBe('wss://itty.ws/c/my-channel?a=b&c=d')
 
       connect('ws://custom.server/path').open()
       expect(mockFn.mock.calls[1][0]).toBe('ws://custom.server/path?')
@@ -173,16 +179,16 @@ const tests: TestTree = {
             .send({ foo: 'bar' }),
         'message props do not override event base props': async ({ getChannel, resolve }, date = new Date()) =>
           getChannel({ echo: true, alias: 'test-user' })
-            .on('message', (e) => {
+            .on<{ foo: string }>('message', (e) => {
               expect(e.foo).toBe('bar')
               // confirm types are correct
               expect(e.uid).toBeTypeOf('string')
               expect(e.alias).toBeTypeOf('string')
-              expect(e.date).toBeInstanceOf(Date)
+              expect(e.date).toBeTypeOf('number')
               // confirm props are not overridden
               expect(e.uid).not.toBe('foo')
               expect(e.alias).not.toBe('bar')
-              expect(e.date).not.toBe(date)
+              expect(e.date).not.toBe(+date)
               resolve()
             })
             .send({ foo: 'bar', uid: 'foo', alias: 'bar', date }),
@@ -236,6 +242,15 @@ const tests: TestTree = {
               resolve()
             })
       },
+      '.on(\'error\', listener)': {
+        'registers an event listener that is called when an error occurs': async ({ channel, resolve }) =>
+          channel
+            .on('error', e => {
+              expect(e.message).toContain('non-existent-user')
+              resolve()
+            })
+            .send('test', 'non-existent-user')
+      },
       '.on(\'leave\', listener)': {
         'registers an event listener that is called when a user leaves the channel': async ({ channel, getChannel,resolve }) => {
             channel.on('leave', e => {
@@ -264,19 +279,19 @@ const tests: TestTree = {
         }
       },
       '.on(\'{custom-type}\', listener)': {
-        'catches when message.type matches the custom type': async ({ channel, getChannel, resolve, spy }) => {
-           channel.on<{ user: string, text: string }>('chat', (e) => {
-              const { user, text } = e
-              expect(user).toBe('test-user')
-              expect(text).toBe('test')
-              expect(e.type).toBe('chat') // currently giving a TS error (incorrect)
-              expect(e.uid).toBeTypeOf('string')
-              expect(e.date).toBeInstanceOf(Date)
-              expect(e.user).toBe(e.message.user)
-              resolve()
-            })
-            .on('message', spy)
-            getChannel().push({ type: 'chat', user: 'test-user', text: 'test' }) //
+        'catches when message.type matches the custom type': async ({ getChannel, resolve }) => {
+           getChannel()
+             .on<{ user: string, text: string }>('chat', (e) => {
+                const { user, text } = e
+                expect(user).toBe('test-user')
+                expect(text).toBe('test')
+                expect(e.type).toBe('chat') // currently giving a TS error (incorrect)
+                expect(e.uid).toBeTypeOf('string')
+                expect(e.date).toBeTypeOf('number')
+                expect(e.user).toBe(e.message.user)
+                resolve()
+              })
+            getChannel().send({ type: 'chat', user: 'test-user', text: 'test' }) //
         },
         'will still trigger "message" listeners': async ({ getChannel, resolve, spy }) =>
           getChannel({ echo: true })
@@ -291,7 +306,7 @@ const tests: TestTree = {
         'will include custom payloads at top level and under e.message': async ({ getChannel, resolve, spy }) =>
           getChannel({ echo: true })
             .on('message', spy)
-            .on('chat', (e) => {
+            .on<ChatMessage>('chat', (e) => {
                expect(e.type).toBe('chat')
                expect(e.user).toBe('test-user')
                expect(e.text).toBe('test')
@@ -416,7 +431,7 @@ const tests: TestTree = {
               expect(e.users).toBe(1)
               expect(e.uid).toBeUndefined()
               expect(e.alias).toBeUndefined()
-              expect(e.date).toBeInstanceOf(Date)
+              expect(e.date).toBeTypeOf('number')
               resolve()
             }),
         'with { announce: true }': async ({ getChannel, resolve }) =>
@@ -425,7 +440,7 @@ const tests: TestTree = {
               expect(e.users).toBe(1)
               expect(e.uid).toBeTypeOf('string')
               expect(e.alias).toBe('test-user')
-              expect(e.date).toBeInstanceOf(Date)
+              expect(e.date).toBeTypeOf('number')
               resolve()
             })
       },
@@ -436,18 +451,18 @@ const tests: TestTree = {
               expect(e.users).toBe(1)
               expect(e.uid).toBeUndefined()
               expect(e.alias).toBeUndefined()
-              expect(e.date).toBeInstanceOf(Date)
+              expect(e.date).toBeTypeOf('number')
               resolve()
             })
           getChannel().push('test')
         },
-        'with { announce: true }': async ({ channel,getChannel, resolve }) => {
-          channel
+        'with { announce: true }': async ({ getChannel, resolve }) => {
+          getChannel()
             .on('leave', e => {
               expect(e.users).toBe(1)
               expect(e.uid).toBeTypeOf('string')
               expect(e.alias).toBe('test-user')
-              expect(e.date).toBeInstanceOf(Date)
+              expect(e.date).toBeTypeOf('number')
               resolve()
             })
           getChannel({ announce: true, as: 'test-user' }).push('test')
@@ -460,7 +475,7 @@ const tests: TestTree = {
               expect(e.message).toBe('test')
               expect(e.uid).toBeTypeOf('string')
               expect(e.alias).toBeUndefined()
-              expect(e.date).toBeInstanceOf(Date)
+              expect(e.date).toBeTypeOf('number')
               resolve()
             })
             .send('test'),
@@ -470,7 +485,7 @@ const tests: TestTree = {
               expect(e.message).toBe('test')
               expect(e.uid).toBeTypeOf('string')
               expect(e.alias).toBe('test-user')
-              expect(e.date).toBeInstanceOf(Date)
+              expect(e.date).toBeTypeOf('number')
               resolve()
             })
             .send('test'),
@@ -482,7 +497,7 @@ const tests: TestTree = {
 // setup function for each test
 const setup = () => {
   const id = 'itty:itty-sockets:test-' + Math.random().toString(36).slice(2)
-  const getChannel = (options = {}) => {
+  const getChannel = (options = {}): IttySocket<UseItty> => {
     const channel = connect(id, options)
     OPEN_CHANNELS.push(channel)
     return channel
@@ -490,7 +505,7 @@ const setup = () => {
 
   return {
     getChannel,
-    channel: getChannel(id),
+    channel: getChannel(id) as IttySocket<UseItty>,
     spy: mock(() => {}),
   }
 }
