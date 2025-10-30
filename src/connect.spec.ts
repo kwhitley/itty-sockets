@@ -279,7 +279,7 @@ const tests: TestTree = {
         }
       },
       '.on(\'{custom-type}\', listener)': {
-        'catches when message.type matches the custom type': async ({ channel, getChannel, resolve, spy }) => {
+        'catches when message.type matches the custom type': async ({ getChannel, resolve }) => {
            getChannel()
              .on<{ user: string, text: string }>('chat', (e) => {
                 const { user, text } = e
@@ -456,7 +456,7 @@ const tests: TestTree = {
             })
           getChannel().push('test')
         },
-        'with { announce: true }': async ({ channel, getChannel, resolve }) => {
+        'with { announce: true }': async ({ getChannel, resolve }) => {
           getChannel()
             .on('leave', e => {
               expect(e.users).toBe(1)
