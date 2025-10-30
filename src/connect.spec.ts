@@ -379,13 +379,15 @@ const tests: TestTree = {
               }
             })
             .on('open', () => {
-              getChannel().on('message', spy)
-
-              getChannel({ announce: true, alias: 'test-user' })
-                .on('message', (e) => {
-                  expect(e.message).toBe('test')
-                  expect(spy).not.toHaveBeenCalled()
-                  resolve()
+              getChannel()
+                .on('message', spy)
+                .on('open', () => {
+                  getChannel({ announce: true, alias: 'test-user' })
+                    .on('message', (e) => {
+                      expect(e.message).toBe('test')
+                      expect(spy).not.toHaveBeenCalled()
+                      resolve()
+                    })
                 })
             }),
         'will send an error if the recipient does not exist': async ({ channel, resolve }) =>
@@ -403,8 +405,9 @@ const tests: TestTree = {
               expect(e.message).toBe('test')
               resolve()
             })
-
-          getChannel().push('test')
+            .on('open', () => {
+              getChannel().push('test')
+            })
         },
         'closes after sending a message': async ({ channel, resolve }) =>
           channel
@@ -465,7 +468,9 @@ const tests: TestTree = {
               expect(e.date).toBeTypeOf('number')
               resolve()
             })
-          getChannel().push('test')
+            .on('open', () => {
+              getChannel().push('test')
+            })
         },
         'with { announce: true }': async ({ getChannel, resolve }) => {
           getChannel()
@@ -476,7 +481,9 @@ const tests: TestTree = {
               expect(e.date).toBeTypeOf('number')
               resolve()
             })
-          getChannel({ announce: true, as: 'test-user' }).push('test')
+            .on('open', () => {
+              getChannel({ announce: true, as: 'test-user' }).push('test')
+            })
         }
       },
       'message': {

@@ -3,10 +3,10 @@ CAUTION: Pre v1.0.0, this should be considered an alpha release, with minor upda
 #### v0.6.0
 - added: .on('custom-type', listener) support, keying off payload.type
 - added: .on(filterFunction, listener) support to route listeners based on custom payload rules
-- added: .on('message', listener) still works, catching all user-sent messages
+- added: .on('message', listener) still works, catching *all* user-sent messages
 - added: full TypeScript generics support for .on and .send functions
-- added: for convenience, we now destructure the message payload into the top-level event (under the event props)
-- fix: only add date to payloads that contain .date field
+- added: for convenience, we now destructure the message payload into the top-level event (before the event props)
+- breaking: removed Date casting of event.date, now left as numeric timestamp
 #### v0.5.0
 - BREAKING: removed base (url) option - instead, simply pass a full wss:// path as the channelId to use an external compatible server.
 #### v0.4.0
