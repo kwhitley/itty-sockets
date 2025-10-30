@@ -253,11 +253,14 @@ const tests: TestTree = {
       },
       '.on(\'leave\', listener)': {
         'registers an event listener that is called when a user leaves the channel': async ({ channel, getChannel,resolve }) => {
-            channel.on('leave', e => {
-              expect(e.users).toBe(1)
-              resolve()
-            })
-            getChannel().push('test') // trigger a join + leave
+            channel
+              .on('leave', e => {
+                expect(e.users).toBe(1)
+                resolve()
+              })
+              .on('open', () => {
+                getChannel().push('test') // trigger a join + leave
+              })
         },
         'does NOT include user details when { announce: true } is not set': async ({ channel, getChannel, resolve }) => {
           channel
@@ -266,7 +269,9 @@ const tests: TestTree = {
               expect(e.alias).toBeUndefined()
               resolve()
             })
-          getChannel().push('test') // trigger a join + leave
+            .on('open', () => {
+              getChannel().push('test') // trigger a join + leave
+            })
         },
         'DOES include user details when { announce: true } is set': async ({ getChannel, resolve }) => {
           getChannel()
@@ -275,7 +280,9 @@ const tests: TestTree = {
               expect(e.alias).toBe('test-user')
               resolve()
             })
-          getChannel({ announce: true, alias: 'test-user' }).push('test') // trigger a join + leave
+            .on('open', () => {
+              getChannel({ announce: true, alias: 'test-user' }).push('test') // trigger a join + leave
+            })
         }
       },
       '.on(\'{custom-type}\', listener)': {
@@ -291,7 +298,9 @@ const tests: TestTree = {
                 expect(e.user).toBe(e.message.user)
                 resolve()
               })
-            getChannel().send({ type: 'chat', user: 'test-user', text: 'test' }) //
+              .on('open', () => {
+                getChannel().send({ type: 'chat', user: 'test-user', text: 'test' })
+              })
         },
         'will still trigger "message" listeners': async ({ getChannel, resolve, spy }) =>
           getChannel({ echo: true })
@@ -346,7 +355,9 @@ const tests: TestTree = {
               expect(e.message).toBe('test')
               resolve()
             })
-          getChannel().send('test')
+            .on('open', () => {
+              getChannel().send('test')
+            })
         },
         'delivers a message to a recipient': async ({ channel, getChannel, resolve }) => {
           channel
