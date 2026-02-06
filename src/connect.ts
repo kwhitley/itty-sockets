@@ -95,6 +95,7 @@ export let connect: IttySocketConnect = (channelId: string, options = {}) => {
       events[parsed?.type ?? payload?.type]?.map(listener => listener(eventPayload)) // all custom messages
       if (!parsed?.type) events.message?.map(listener => listener(eventPayload)) // all user messages
       filters.map(([filter, listener]) => filter(eventPayload) && listener(eventPayload)) // all filtered messages
+      events['*']?.map(listener => listener(eventPayload))
     }
 
     ws.onopen = () => (
