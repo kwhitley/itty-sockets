@@ -74,7 +74,6 @@ export let connect: IttySocketConnect = (channelId: string, options = {}) => {
   let ws: WebSocket | null,
       closeAfterSend = 0,
       queue: string[] = [],
-      filters: Array<[(event?: any) => any, (event?: any) => any]> = [],
       events: Record<string, Array<(event?: any) => any>> = {}
 
   let open = () => {
@@ -92,9 +91,8 @@ export let connect: IttySocketConnect = (channelId: string, options = {}) => {
         ...parsed,
       },
     ) => {
-      events[parsed?.type ?? payload?.type]?.map(listener => listener(eventPayload)) // all custom messages
-      if (!parsed?.type) events.message?.map(listener => listener(eventPayload)) // all user messages
-      filters.map(([filter, listener]) => filter(eventPayload) && listener(eventPayload)) // all filtered messages
+      events[parsed?.type ?? payload?.type]?.map(listener => listener(eventPayload))
+      if (!parsed?.type) events.message?.map(listener => listener(eventPayload))
       events['*']?.map(listener => listener(eventPayload))
     }
 
@@ -124,8 +122,8 @@ export let connect: IttySocketConnect = (channelId: string, options = {}) => {
           message = recipient ? '\x1F' + recipient + '\x1F' + message : message,
           ws?.readyState == 1 ? (ws.send(message), socket) : (queue.push(message), open())
         ),
-        on: (type: any | ((event?: any) => any), listener: () => any) => (
-          listener && (type?.[0] ? (events[type] ??= []).push(listener) : filters.push([type, listener])),
+        on: (type: any, listener: (e?: any) => any) => (
+          listener && (events[type?.[0] ? type : '*'] ??= []).push(type?.[0] ? listener : (e: any) => type(e) && listener(e)),
           open()
         ),
         remove: (
