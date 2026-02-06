@@ -22,7 +22,7 @@
 
 ## Features ✨
 1. **DX perks** - JSON-in/out, queued messages, easy-reconnect, chainable everything.
-1. **Works with any JSON-based WebSocket server**
+1. **Works with *any* JSON-based WebSocket server**
 1. **Powerful Routing**
    - Listen for all messages
      ```ts
@@ -42,7 +42,7 @@
      )
      ```
 1. **Type-safe message handling**
-1. **Tiny footprint** - 512 bytes, all-in.
+1. **Tiny footprint** (see latest bundle size in badge)
 1. **Optional usage with free/public/zero-config [itty.ws](https://itty.ws) service**
 
 ## Basic Example
@@ -108,6 +108,7 @@ connect('wss://example.com')
 
 Now let's assume the following 2 messages are sent:
 ```json
+// message 1
 {
   "type": "chat",
   "user": "Kevin",
@@ -116,6 +117,7 @@ Now let's assume the following 2 messages are sent:
 ```
 
 ```json
+// message 2
 {
   "date": 1754659171196,
   "items": [1, 2, 3],
@@ -123,12 +125,13 @@ Now let's assume the following 2 messages are sent:
 ```
 
 This will output the following to the console:
-```
+```js
+// message 1
 { type: "chat", user: "Kevin", text: "Hey!" }
-
-{ date: 1754659171196, items: [1, 2, 3] }
-
 "Kevin says: Hey!"
+
+// message 2
+{ date: 1754659171196, items: [1, 2, 3] }
 ```
 
 ## Example 3 - Reconnection
