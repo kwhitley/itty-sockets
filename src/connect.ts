@@ -72,7 +72,7 @@ export type IttySocket<BaseFormat = object> = {
 
 export let connect: IttySocketConnect = (channelId: string, options = {}) => {
   let ws: WebSocket | null,
-      closeAfterSend = 0,
+      closeAfterSend: number,
       queue: string[] = [],
       events: Record<string, Array<(event?: any) => any>> = {}
 
@@ -130,7 +130,7 @@ export let connect: IttySocketConnect = (channelId: string, options = {}) => {
           type: any,
           listener: () => any,
           listeners = events[type],
-          i = listeners?.indexOf(listener) ?? -1
+          i = listeners?.indexOf(listener)
         ) => (~i && listeners?.splice(i, 1), open()),
       })[key]
   })
