@@ -22,7 +22,7 @@
 
 ## Features ✨
 1. **DX perks** - JSON-in/out, queued messages, easy-reconnect, chainable everything.
-1. **Works with any JSON-based WebSocket server**
+1. **Works with *any* JSON-based WebSocket server**
 1. **Powerful Routing**
    - Listen for all messages
      ```ts
@@ -42,7 +42,7 @@
      )
      ```
 1. **Type-safe message handling**
-1. **Tiny footprint** - 512 bytes, all-in.
+1. **Tiny footprint** (see latest bundle size in badge)
 1. **Optional usage with free/public/zero-config [itty.ws](https://itty.ws) service**
 
 ## Basic Example
@@ -85,7 +85,7 @@ import { connect } from 'itty-sockets'
 **Option 2: Just copy this snippet:**
 <!-- BEGIN SNIPPET -->
 ```ts
-let connect=(e,s={})=>{let p,a=0,n=[],t=[],o={},l=()=>(p||(p=new WebSocket((/^wss?:/.test(e)?e:"wss://itty.ws/c/"+e)+"?"+new URLSearchParams(s)),p.onmessage=(e,s=JSON.parse(e.data),p=s?.message,a={...null==p?.[0]&&p,...s})=>{o[s?.type??p?.type]?.map(e=>e(a)),s?.type||o.message?.map(e=>e(a)),t.map(([e,s])=>e(a)&&s(a))},p.onopen=()=>(n.splice(0).map(e=>p?.send(e)),o.open?.map(e=>e()),a&&p?.close()),p.onclose=()=>(a=0,p=null,o.close?.map(e=>e()))),m),m=new Proxy(l,{get:(e,s)=>({open:l,close:()=>(1==p?.readyState?p.close():a=1,m),push:(e,s)=>(a=1,m.send(e,s)),send:(e,s)=>(e=JSON.stringify(e),e=s?""+s+""+e:e,1==p?.readyState?(p.send(e),m):(n.push(e),l())),on:(e,s)=>(s&&(e?.[0]?(o[e]??=[]).push(s):t.push([e,s])),l()),remove:(e,s,p=o[e],a=p?.indexOf(s)??-1)=>(~a&&p?.splice(a,1),l())}[s])});return m};
+let connect=(e,s={})=>{let a,t,n=[],p={},o=()=>(a||(a=new WebSocket((/^wss?:/.test(e)?e:"wss://itty.ws/c/"+e)+"?"+new URLSearchParams(s)),a.onmessage=(e,s=JSON.parse(e.data),a=s?.message,t={...null==a?.[0]&&a,...s})=>[t.type,s.type?0:"message","*"].map(e=>p[e]?.map(e=>e(t))),a.onopen=()=>(n.splice(0).map(e=>a.send(e)),p.open?.map(e=>e(t)),t&&a?.close()),a.onclose=()=>(t=a=null,p.close?.map(e=>e(t)))),l),l={open:o,send:(e,s)=>(e=(s?`${s}`:"")+JSON.stringify(e),1&a?.readyState?a.send(e):n.push(e),o()),on:(e,s)=>((p[e?.[0]?e:"*"]??=[]).push(e?.[0]?s:a=>e?.(a)&&s(a)),o()),remove:(e,s)=>(p[e]=p[e]?.filter(e=>e!=s),l),close:()=>(1&a?.readyState?a.close():t=1,l),push:(e,s)=>(t=1,l.send(e,s))};return l};
 ```
 <!-- END SNIPPET -->
 *Note: This will lose TypeScript support.*
@@ -101,13 +101,14 @@ connect('wss://example.com')
   .on('message', console.log)
 
   // and just { type: 'chat' }
-  .on('chat', 
+  .on('chat',
     ({ user, text }) => console.log(`${user} says: ${text}`)
   )
 ```
 
 Now let's assume the following 2 messages are sent:
 ```json
+// message 1
 {
   "type": "chat",
   "user": "Kevin",
@@ -116,6 +117,7 @@ Now let's assume the following 2 messages are sent:
 ```
 
 ```json
+// message 2
 {
   "date": 1754659171196,
   "items": [1, 2, 3],
@@ -123,12 +125,13 @@ Now let's assume the following 2 messages are sent:
 ```
 
 This will output the following to the console:
-```
+```js
+// message 1
 { type: "chat", user: "Kevin", text: "Hey!" }
-
-{ date: 1754659171196, items: [1, 2, 3] }
-
 "Kevin says: Hey!"
+
+// message 2
+{ date: 1754659171196, items: [1, 2, 3] }
 ```
 
 ## Example 3 - Reconnection

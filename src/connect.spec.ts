@@ -326,6 +326,21 @@ const tests: TestTree = {
             })
             .send({ type: 'chat', user: 'test-user', text: 'test' })
       },
+      '.on(\'*\', listener)': {
+        'catches both typed and untyped events': async ({ getChannel, resolve }) => {
+          const received: any[] = []
+          getChannel({ echo: true })
+            .on('*', (e) => {
+              received.push(e)
+              if (received.length === 2) {
+                expect(received[0].type).toBe('join')
+                expect(received[1].message).toBe('test')
+                resolve()
+              }
+            })
+            .send('test')
+        },
+      },
       '.on(eventFilter, listener)': {
         'can accept a filter function as type': async ({ getChannel, resolve, spy }) =>
           getChannel({ echo: true })

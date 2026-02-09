@@ -5,9 +5,9 @@
   "type": "module",
   "exports": {
     ".": {
-      "import": "./connect.mjs",
-      "types": "./connect.d.ts",
-      "require": "./connect.js"
+      "import": "./dist/connect.mjs",
+      "types": "./dist/connect.d.ts",
+      "require": "./dist/connect.js"
     }
   },
   "scripts": {

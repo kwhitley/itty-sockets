@@ -76,58 +76,108 @@ export let connect: IttySocketConnect = (channelId: string, options = {}) => {
       queue: string[] = [],
       events: Record<string, Array<(event?: any) => any>> = {}
 
-  let open = () => (
-    ws || (
-      // @ts-ignore - options will be cast as string regardless of what is passed
-      ws = new WebSocket((/^wss?:/.test(channelId) ? channelId : 'wss://itty.ws/c/' + channelId) + '?' + new URLSearchParams(options)),
+  let open = () => {
+    if (ws) return socket
 
-      ws.onmessage = (
-        event: any,
-        parsed = JSON.parse(event.data),
-        payload = parsed?.message,
-        eventPayload = {
-          ...(payload?.[0] == null && payload),
-          ...parsed,
-        },
-      ) =>
-        [eventPayload.type, parsed.type ? 0 : 'message', '*'].map(key =>
-          events[key]?.map(listener => listener(eventPayload))
-        ),
+    // @ts-ignore - options will be cast as string regardless of what is passed
+    ws = new WebSocket((channelId[3] < 'a' ? channelId : 'wss://itty.ws/c/' + channelId) + '?' + new URLSearchParams(options))
 
-      ws.onopen = () => (
-        queue.splice(0).map(m => ws!.send(m)),
-        events.open?.map(listener => listener(closeAfterSend)),
-        closeAfterSend && ws?.close()
-      ),
+    ws.onmessage = (
+      event: any,
+      parsed = JSON.parse(event.data),
+      payload = parsed?.message,
+      eventPayload = {
+        ...(payload?.[0] == null && payload),
+        ...parsed,
+      },
+    ) => (
+      events[eventPayload.type]?.map(listener => listener(eventPayload)),
+      parsed.type || events.message?.map(listener => listener(eventPayload)),
+      events['*']?.map(listener => listener(eventPayload))
+    )
 
-      ws.onclose = () => (
-        closeAfterSend = ws = null,
-        events.close?.map(listener => listener(closeAfterSend))
-      )
-    ),
-    socket
+    ws.onopen = () => (
+      queue.splice(0).map(m => ws!.send(m)),
+      events.open?.map(listener => listener(closeAfterSend)),
+      closeAfterSend && ws?.close()
+    )
+
+    ws.onclose = () => (
+      closeAfterSend = ws = null,
+      events.close?.map(listener => listener(closeAfterSend))
+    )
+
+    return socket
+  }
+
+  let send = (message: any, recipient?: string) => (
+    message = (recipient ? `\x1F${recipient}\x1F` : '') + JSON.stringify(message),
+    ws?.readyState & 1 ? ws!.send(message) : queue.push(message),
+    open()
   )
 
   let socket: any = {
     open,
-    send: (message: any, recipient?: string) => (
-      message = (recipient ? `\x1F${recipient}\x1F` : '') + JSON.stringify(message),
-      // @ts-ignore
-      ws?.readyState & 1 ? ws!.send(message) : queue.push(message),
-      open()
-    ),
+    send,
     on: (type: any, listener: (e?: any) => any) => (
-      (events[type?.[0] ? type : '*'] ??= []).push(type?.[0] ? listener : (e: any) => type?.(e) && listener(e)),
+      (events[type?.[0] ? type : '*'] ??= []).push(type?.[0] ? listener : (e: any) => type(e) && listener(e)),
       open()
     ),
     remove: (type: any, listener: () => any) => (
       events[type] = events[type]?.filter((l: any) => l != listener),
       socket
     ),
-    // @ts-ignore
     close: () => (ws?.readyState & 1 ? ws!.close() : closeAfterSend = 1, socket),
-    push: (message: any, recipient?: string) => (closeAfterSend = 1, socket.send(message, recipient!)),
+    push: (message: any, recipient?: string) => (closeAfterSend = 1, send(message, recipient!)),
   }
 
   return socket
 }
+
+// type Chat = { type: 'chat', user: string, text: string }
+
+// connect<UseItty>('doo')
+//   .on<Chat>('message', e => {
+//     e
+//   })
+//   .on<Chat>('chat', (e) => {
+//     e.text
+//   })
+//   .on<Chat>(v => v.type === 'chat', e => {
+//     e.texts
+//   })
+//   // .send() // test for (message) vs (message, recipient) based on BaseFormat type
+//   .remove('leave',
+
+
+// GENERICS TESTING
+// connect('test')
+//   .on('message', (e) => e.message.name)
+//   .on('close', () => {})
+//   .send(123)
+//   .on<{ x: string }>('message', (e) => parseInt(e.message.x))
+//   .send<{ foo: string }>({ foo: 'bar' })
+//   .on('join', e => e.users + 4)
+//   .on('leave', e => e.users - 4)
+//   .on('error', e => e.message)
+//   .on('message', e => e.message.whatever)
+//   .on('message', e => e.whatever)
+//   .on<{ foo: string }>('message', e => e.message.foo)
+//   .on<{ foo: string }>('message', e => e.foo)
+//   .on<{ foo: string }>('chat', e => e.foo)
+//   .on<{ foo: string }>('chat', e => e.type)
+//   .send({ $type: 'chat', foo: 'bar' })
+//   .on('*', e => e.message)
+
+//   .on<{ age: number }>('message', (e) => e.message.name) // ERROR
+//   .on<{ x: number }>('message', (e) => parseInt(e.message.x)) // ERROR
+//   .send<string>(123) // ERROR
+//   .send<{ foo: string }>(123) // ERROR
+//   .send<{ foo: string }>({ foo: 'foo', bar: 123 }) // ERROR
+//   .on('join', e => e.message) // ERROR
+//   .on<{ foo: string }>('join', e => e.users) // ERROR
+//   .on('leave', e => e.message) // ERROR
+//   .on('error', e => e.foo) // ERROR
+//   .on<{ foo: string }>('message', e => e.message.whatever) // ERROR
+//   .on<{ foo: string }>('chat', e => e.bar) // ERROR
+
