@@ -20,30 +20,17 @@
 
 ### Say goodbye to WebSocket boilerplate.
 
+Your own wrapper is bigger, I promise.
+
+Or [optionally] go a step further and use the integrated [itty.ws](https://itty.ws) connection to send messages (zero-config, zero-tracking, 100% free).
+
 ## Features ✨
-1. **DX perks** - JSON-in/out, queued messages, easy-reconnect, chainable everything.
-1. **Works with *any* JSON-based WebSocket server** - It's just a raw WebSocket wrapper, after all.
-1. **Powerful Routing**
-   - Listen for all messages
-     ```ts
-     .on('message', data => console.log(data))
-     ```
-   - Only specific types
-     ```ts
-     // matches any data with { type: 'chat' }
-     .on('chat', ({ text }) => console.log(text))
-     ```
-   - or fully custom filters
-     ```ts
-     // matches only messages where data.value > 20
-     .on(
-       ({ value }) => value > 20), // filter function
-       ({ value }) => console.log(value),
-     )
-     ```
-1. **Type-safe message handling**
-1. **Tiny** - Under 500 bytes, all-in.
-1. **Easy connection to free/public/zero-config [itty.ws](https://itty.ws) service** - Don't want to roll your own socket server?  Neither do I.  *Every one of my projects* use [itty.ws](https://itty.ws) public channels.
+1. **DX perks** - JSON-in/out, queued messages, easy-reconnect, chainable everything
+1. **Works with *any* JSON-based WebSocket server** - it's just a raw WebSocket wrapper, after all
+1. **Powerful routing** - easily handle your own message formats
+1. **Type-safe message handling** - so your app knows what to expect
+1. **No socket server needed** - Use [itty.ws](https://itty.ws) public channels to get started even faster
+1. **Tiny** - under 500 bytes total
 
 ## Basic Example
 ```ts
