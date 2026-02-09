@@ -85,7 +85,7 @@ import { connect } from 'itty-sockets'
 **Option 2: Just copy this snippet:**
 <!-- BEGIN SNIPPET -->
 ```ts
-let connect=(e,s={})=>{let a,n,p=[],t={},o=()=>(a||(a=new WebSocket((/^wss?:/.test(e)?e:"wss://itty.ws/c/"+e)+"?"+new URLSearchParams(s)),a.onmessage=(e,s=JSON.parse(e.data),a=s?.message,n={...null==a?.[0]&&a,...s})=>{t[s?.type??a?.type]?.map(e=>e(n)),s?.type||t.message?.map(e=>e(n)),t["*"]?.map(e=>e(n))},a.onopen=()=>(p.splice(0).map(e=>a?.send(e)),t.open?.map(e=>e()),n&&a?.close()),a.onclose=()=>(n=0,a=null,t.close?.map(e=>e()))),l),l=new Proxy(o,{get:(e,s)=>({open:o,close:()=>(1==a?.readyState?a.close():n=1,l),push:(e,s)=>(n=1,l.send(e,s)),send:(e,s)=>(e=JSON.stringify(e),e=s?""+s+""+e:e,1==a?.readyState?(a.send(e),l):(p.push(e),o())),on:(e,s)=>(s&&(t[e?.[0]?e:"*"]??=[]).push(e?.[0]?s:a=>e(a)&&s(a)),o()),remove:(e,s,a=t[e],n=a?.indexOf(s))=>(~n&&a?.splice(n,1),o())}[s])});return l};
+let connect=(e,s={})=>{let a,n,p=[],t={},o={open:()=>(a||(a=new WebSocket((/^wss?:/.test(e)?e:"wss://itty.ws/c/"+e)+"?"+new URLSearchParams(s)),a.onmessage=(e,s=JSON.parse(e.data),a=s?.message,n={...null==a?.[0]&&a,...s})=>(t[n.type]?.map(e=>e(n)),s.type||t.message?.map(e=>e(n)),t["*"]?.map(e=>e(n))),a.onopen=()=>(p.splice(0).map(e=>a.send(e)),t.open?.map(e=>e(n)),n&&a?.close()),a.onclose=()=>(n=a=null,t.close?.map(e=>e(n)))),o),send:(e,s)=>(e=(s?`${s}`:"")+JSON.stringify(e),1&a?.readyState?a.send(e):p.push(e),o.open()),on:(e,s)=>((t[e?.[0]?e:"*"]??=[]).push(e?.[0]?s:a=>e?.(a)&&s(a)),o.open()),remove:(e,s)=>(t[e]=t[e]?.filter(e=>e!=s),o),close:()=>(1&a?.readyState?a.close():n=1,o),push:(e,s)=>(n=1,o.send(e,s))};return o};
 ```
 <!-- END SNIPPET -->
 *Note: This will lose TypeScript support.*
