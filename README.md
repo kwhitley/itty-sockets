@@ -18,11 +18,11 @@
 
 ---
 
-### The last WebSocket client you'll need : 512 bytes, all-in.
+### Say goodbye to WebSocket boilerplate.
 
 ## Features ✨
 1. **DX perks** - JSON-in/out, queued messages, easy-reconnect, chainable everything.
-1. **Works with *any* JSON-based WebSocket server**
+1. **Works with *any* JSON-based WebSocket server** - It's just a raw WebSocket wrapper, after all.
 1. **Powerful Routing**
    - Listen for all messages
      ```ts
@@ -42,8 +42,8 @@
      )
      ```
 1. **Type-safe message handling**
-1. **Tiny footprint** (see latest bundle size in badge)
-1. **Optional usage with free/public/zero-config [itty.ws](https://itty.ws) service**
+1. **Tiny** - Under 500 bytes, all-in.
+1. **Easy connection to free/public/zero-config [itty.ws](https://itty.ws) service** - Don't want to roll your own socket server?  Neither do I.  *Every one of my projects* use [itty.ws](https://itty.ws) public channels.
 
 ## Basic Example
 ```ts
