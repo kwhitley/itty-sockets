@@ -85,7 +85,7 @@ import { connect } from 'itty-sockets'
 **Option 2: Just copy this snippet:**
 <!-- BEGIN SNIPPET -->
 ```ts
-let connect=(e,s={})=>{let a,n,p=[],t={},o={open:()=>(a||(a=new WebSocket((/^wss?:/.test(e)?e:"wss://itty.ws/c/"+e)+"?"+new URLSearchParams(s)),a.onmessage=(e,s=JSON.parse(e.data),a=s?.message,n={...null==a?.[0]&&a,...s})=>(t[n.type]?.map(e=>e(n)),s.type||t.message?.map(e=>e(n)),t["*"]?.map(e=>e(n))),a.onopen=()=>(p.splice(0).map(e=>a.send(e)),t.open?.map(e=>e(n)),n&&a?.close()),a.onclose=()=>(n=a=null,t.close?.map(e=>e(n)))),o),send:(e,s)=>(e=(s?`${s}`:"")+JSON.stringify(e),1&a?.readyState?a.send(e):p.push(e),o.open()),on:(e,s)=>((t[e?.[0]?e:"*"]??=[]).push(e?.[0]?s:a=>e?.(a)&&s(a)),o.open()),remove:(e,s)=>(t[e]=t[e]?.filter(e=>e!=s),o),close:()=>(1&a?.readyState?a.close():n=1,o),push:(e,s)=>(n=1,o.send(e,s))};return o};
+let connect=(e,s={})=>{let a,t,n=[],p={},o=()=>(a||(a=new WebSocket((/^wss?:/.test(e)?e:"wss://itty.ws/c/"+e)+"?"+new URLSearchParams(s)),a.onmessage=(e,s=JSON.parse(e.data),a=s?.message,t={...null==a?.[0]&&a,...s})=>[t.type,s.type?0:"message","*"].map(e=>p[e]?.map(e=>e(t))),a.onopen=()=>(n.splice(0).map(e=>a.send(e)),p.open?.map(e=>e(t)),t&&a?.close()),a.onclose=()=>(t=a=null,p.close?.map(e=>e(t)))),l),l={open:o,send:(e,s)=>(e=(s?`${s}`:"")+JSON.stringify(e),1&a?.readyState?a.send(e):n.push(e),o()),on:(e,s)=>((p[e?.[0]?e:"*"]??=[]).push(e?.[0]?s:a=>e?.(a)&&s(a)),o()),remove:(e,s)=>(p[e]=p[e]?.filter(e=>e!=s),l),close:()=>(1&a?.readyState?a.close():t=1,l),push:(e,s)=>(t=1,l.send(e,s))};return l};
 ```
 <!-- END SNIPPET -->
 *Note: This will lose TypeScript support.*

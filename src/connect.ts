@@ -76,12 +76,10 @@ export let connect: IttySocketConnect = (channelId: string, options = {}) => {
       queue: string[] = [],
       events: Record<string, Array<(event?: any) => any>> = {}
 
-  let socket: any = {
-    open: () => {
-      if (ws) return socket
-
+  let open = () => (
+    ws || (
       // @ts-ignore - options will be cast as string regardless of what is passed
-      ws = new WebSocket((/^wss?:/.test(channelId) ? channelId : 'wss://itty.ws/c/' + channelId) + '?' + new URLSearchParams(options))
+      ws = new WebSocket((/^wss?:/.test(channelId) ? channelId : 'wss://itty.ws/c/' + channelId) + '?' + new URLSearchParams(options)),
 
       ws.onmessage = (
         event: any,
@@ -91,34 +89,36 @@ export let connect: IttySocketConnect = (channelId: string, options = {}) => {
           ...(payload?.[0] == null && payload),
           ...parsed,
         },
-      ) => (
-        events[eventPayload.type]?.map(listener => listener(eventPayload)),
-        parsed.type || events.message?.map(listener => listener(eventPayload)),
-        events['*']?.map(listener => listener(eventPayload))
-      )
+      ) =>
+        [eventPayload.type, parsed.type ? 0 : 'message', '*'].map(key =>
+          events[key]?.map(listener => listener(eventPayload))
+        ),
 
       ws.onopen = () => (
         queue.splice(0).map(m => ws!.send(m)),
         events.open?.map(listener => listener(closeAfterSend)),
         closeAfterSend && ws?.close()
-      )
+      ),
 
       ws.onclose = () => (
         closeAfterSend = ws = null,
         events.close?.map(listener => listener(closeAfterSend))
       )
+    ),
+    socket
+  )
 
-      return socket
-    },
+  let socket: any = {
+    open,
     send: (message: any, recipient?: string) => (
       message = (recipient ? `\x1F${recipient}\x1F` : '') + JSON.stringify(message),
       // @ts-ignore
       ws?.readyState & 1 ? ws!.send(message) : queue.push(message),
-      socket.open()
+      open()
     ),
     on: (type: any, listener: (e?: any) => any) => (
       (events[type?.[0] ? type : '*'] ??= []).push(type?.[0] ? listener : (e: any) => type?.(e) && listener(e)),
-      socket.open()
+      open()
     ),
     remove: (type: any, listener: () => any) => (
       events[type] = events[type]?.filter((l: any) => l != listener),
