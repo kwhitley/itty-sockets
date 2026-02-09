@@ -1,6 +1,6 @@
 {
   "name": "itty-sockets",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "WebSockets : simplified and minified.",
   "type": "module",
   "exports": {
