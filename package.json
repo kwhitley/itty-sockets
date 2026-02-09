@@ -1,6 +1,6 @@
 {
   "name": "itty-sockets",
-  "version": "0.8.0",
+  "version": "0.6.1",
   "description": "WebSockets : simplified and minified.",
   "type": "module",
   "exports": {
@@ -15,8 +15,8 @@
     "test": "bun test --coverage",
     "lint": "itty lint",
     "build": "itty lint && itty build --snippet=connect --hybrid",
-    "release": "itty release --prepare --tag --push",
-    "release:next": "itty release --prepare --tag --push --type=next"
+    "release": "itty release --prepare --tag --push --otp",
+    "release:next": "itty release --prepare --tag --push --type=next --otp"
   },
   "keywords": [
     "websockets",
@@ -34,6 +34,6 @@
   },
   "devDependencies": {
     "@types/bun": "^1.2.3",
-    "itty-packager": "^1.6.10"
+    "itty-packager": "^1.7.0"
   }
 }
