@@ -1,4 +1,4 @@
-type IttySocketEvent<BaseFormat> = BaseFormat extends UseItty
+type IttySocketEvent<BaseFormat> = BaseFormat extends IttyProtocol
   ? 'open' | 'close' | 'message' | 'join' | 'leave'
   : 'open' | 'close' | 'message'
 
@@ -6,9 +6,12 @@ type Timestamp = { date: number }
 type UserDetails = { uid: string, alias?: string }
 type OptionalUserDetails = { uid?: string, alias?: string }
 
-export type UseItty<MessageType = any> = {
+export type IttyProtocol<MessageType = any> = {
   message: MessageType
 } & UserDetails & Timestamp
+
+type ExtractMessage<T> = T extends IttyProtocol<infer M> ? unknown extends M ? unknown : M : T
+type WrapItty<T> = unknown extends T ? IttyProtocol<T> : T extends IttyProtocol ? T : IttyProtocol<T>
 
 export type MessageEvent<MessageType = any> = {
   message: MessageType
@@ -37,20 +40,20 @@ export type IttySocketOptions = {
 }
 
 export interface IttySocketConnect {
-  <BaseFormat = object>(
-    ...args: BaseFormat extends UseItty
-      ? [channelID: string, options?: IttySocketOptions]
-      : [url: string, queryParams?: any]
-  ): IttySocket<BaseFormat>
+  // custom WebSocket server — detected by wss:// or ws:// prefix
+  <BaseFormat = object>(url: `wss://${string}`, queryParams?: any): IttySocket<BaseFormat>
+  <BaseFormat = object>(url: `ws://${string}`, queryParams?: any): IttySocket<BaseFormat>
+  // itty protocol — default for channel names
+  <MessageType = any>(channelID: string, options?: IttySocketOptions): IttySocket<WrapItty<MessageType>>
 }
 
-type UseIttyEvents<BaseFormat> = {
+type IttyProtocolEvents<BaseFormat> = {
   on(type: 'join', listener: (event: JoinEvent) => any): IttySocket<BaseFormat>
   on(type: 'leave', listener: (event: LeaveEvent) => any): IttySocket<BaseFormat>
   on(type: 'error', listener: (event: ErrorEvent) => any): IttySocket<BaseFormat>
 }
 
-type SendMessage<BaseFormat> = BaseFormat extends UseItty
+type SendMessage<BaseFormat> = BaseFormat extends IttyProtocol
   ? <MessageFormat = any>(message: MessageFormat, uid?: string) => IttySocket<BaseFormat>
   : <MessageFormat = any>(message: MessageFormat) => IttySocket<BaseFormat>
 
@@ -65,10 +68,10 @@ export type IttySocket<BaseFormat = object> = {
   // EVENTS
   on(type: 'open', listener: () => any): IttySocket<BaseFormat>
   on(type: 'close', listener: () => any): IttySocket<BaseFormat>
-  on<MessageFormat = BaseFormat>(type: 'message', listener: (event: BaseFormat & MessageFormat) => any): IttySocket<BaseFormat>
-  on<MessageFormat = BaseFormat>(type: string, listener: (event: BaseFormat & MessageFormat & { type: string }) => any): IttySocket<BaseFormat>
-  on<MessageFormat = BaseFormat>(type: (event?: any) => any, listener: (event: BaseFormat & MessageFormat & { type: string }) => any): IttySocket<BaseFormat>
-} & (BaseFormat extends UseItty ? UseIttyEvents<BaseFormat> : object)
+  on<MessageFormat = ExtractMessage<BaseFormat>>(type: 'message', listener: (event: BaseFormat & MessageFormat) => any): IttySocket<BaseFormat>
+  on<MessageFormat = ExtractMessage<BaseFormat>>(type: string, listener: (event: BaseFormat & MessageFormat & { type: string }) => any): IttySocket<BaseFormat>
+  on<MessageFormat = ExtractMessage<BaseFormat>>(type: (event?: any) => any, listener: (event: BaseFormat & MessageFormat & { type: string }) => any): IttySocket<BaseFormat>
+} & (BaseFormat extends IttyProtocol ? IttyProtocolEvents<BaseFormat> : object)
 
 export let connect: IttySocketConnect = (channelId: string, options = {}) => {
   let ws: WebSocket | null,
@@ -131,3 +134,12 @@ export let connect: IttySocketConnect = (channelId: string, options = {}) => {
 
   return socket
 }
+
+type FooType = { foo: string }
+
+const channel = connect('test')
+
+// this should throw a TS error because of the top-level unknown type
+channel.on('message', ({ foo, uid, message, date }) => {
+  console.log(uid, message, date)
+})

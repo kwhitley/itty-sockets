@@ -1,11 +1,11 @@
 import { describe, afterAll, expect, it, mock } from 'bun:test'
-import { connect, type IttySocket, type UseItty } from './connect'
+import { connect, type IttySocket, type IttyProtocol } from './connect'
 
 type TestLeaf = (args: {
-  channel: IttySocket<UseItty>,
+  channel: IttySocket<IttyProtocol>,
   resolve: () => void,
   spy: () => void,
-  getChannel: (options?: any) => IttySocket<UseItty>
+  getChannel: (options?: any) => IttySocket<IttyProtocol>
 }) => void
 
 type TestTree = {
@@ -530,7 +530,7 @@ const tests: TestTree = {
 // setup function for each test
 const setup = () => {
   const id = 'itty:itty-sockets:test-' + Math.random().toString(36).slice(2)
-  const getChannel = (options = {}): IttySocket<UseItty> => {
+  const getChannel = (options = {}): IttySocket<IttyProtocol> => {
     const channel = connect(id, options)
     OPEN_CHANNELS.push(channel)
     return channel
@@ -538,7 +538,7 @@ const setup = () => {
 
   return {
     getChannel,
-    channel: getChannel(id) as IttySocket<UseItty>,
+    channel: getChannel(id) as IttySocket<IttyProtocol>,
     spy: mock(() => {}),
   }
 }
