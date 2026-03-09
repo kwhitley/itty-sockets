@@ -1,17 +1,8 @@
-type IttySocketEvent<BaseFormat> = BaseFormat extends IttyProtocol
-  ? 'open' | 'close' | 'message' | 'join' | 'leave'
-  : 'open' | 'close' | 'message'
-
 type Timestamp = { date: number }
 type UserDetails = { uid: string, alias?: string }
 type OptionalUserDetails = { uid?: string, alias?: string }
 
-export type IttyProtocol<MessageType = any> = {
-  message: MessageType
-} & UserDetails & Timestamp
-
-type ExtractMessage<T> = T extends IttyProtocol<infer M> ? unknown extends M ? unknown : M : T
-type WrapItty<T> = unknown extends T ? IttyProtocol<T> : T extends IttyProtocol ? T : IttyProtocol<T>
+export type IttyProtocol = UserDetails & Timestamp
 
 export type MessageEvent<MessageType = any> = {
   message: MessageType
@@ -39,39 +30,52 @@ export type IttySocketOptions = {
   announce?: true,
 }
 
+// helper: { type: K } & Events[K] for each key K
+type EventUnion<Events> = {
+  [K in keyof Events & string]: { type: K } & Events[K]
+}[keyof Events & string]
+
+type SendFn<Base, Events> = Base extends IttyProtocol
+  ? keyof Events extends never
+    ? <T = any>(message: T, uid?: string) => IttySocket<Base, Events>
+    : (message: EventUnion<Events>, uid?: string) => IttySocket<Base, Events>
+  : keyof Events extends never
+    ? <T = any>(message: T) => IttySocket<Base, Events>
+    : (message: EventUnion<Events>) => IttySocket<Base, Events>
+
 export interface IttySocketConnect {
   // custom WebSocket server — detected by wss:// or ws:// prefix
-  <BaseFormat = object>(url: `wss://${string}`, queryParams?: any): IttySocket<BaseFormat>
-  <BaseFormat = object>(url: `ws://${string}`, queryParams?: any): IttySocket<BaseFormat>
+  <Events extends Record<string, any> = {}>(url: `wss://${string}`, queryParams?: any): IttySocket<object, Events>
+  <Events extends Record<string, any> = {}>(url: `ws://${string}`, queryParams?: any): IttySocket<object, Events>
   // itty protocol — default for channel names
-  <MessageType = any>(channelID: string, options?: IttySocketOptions): IttySocket<WrapItty<MessageType>>
+  <Events extends Record<string, any> = {}>(channelID: string, options?: IttySocketOptions): IttySocket<IttyProtocol, Events>
 }
 
-type IttyProtocolEvents<BaseFormat> = {
-  on(type: 'join', listener: (event: JoinEvent) => any): IttySocket<BaseFormat>
-  on(type: 'leave', listener: (event: LeaveEvent) => any): IttySocket<BaseFormat>
-  on(type: 'error', listener: (event: ErrorEvent) => any): IttySocket<BaseFormat>
+type IttyEvents<Base, Events> = {
+  on(type: 'join', listener: (event: JoinEvent) => any): IttySocket<Base, Events>
+  on(type: 'leave', listener: (event: LeaveEvent) => any): IttySocket<Base, Events>
+  on(type: 'error', listener: (event: ErrorEvent) => any): IttySocket<Base, Events>
 }
 
-type SendMessage<BaseFormat> = BaseFormat extends IttyProtocol
-  ? <MessageFormat = any>(message: MessageFormat, uid?: string) => IttySocket<BaseFormat>
-  : <MessageFormat = any>(message: MessageFormat) => IttySocket<BaseFormat>
+type FallbackEvents<Base, Events> = {
+  on<T = {}>(type: string, listener: (event: Base & T & { type: string }) => any): IttySocket<Base, Events>
+  on<T = {}>(type: (event?: any) => any, listener: (event: Base & T & { type: string }) => any): IttySocket<Base, Events>
+}
 
-export type IttySocket<BaseFormat = object> = {
-  open: () => IttySocket<BaseFormat>
-  close: () => IttySocket<BaseFormat>
-  send: SendMessage<BaseFormat>
-  push: SendMessage<BaseFormat>
-  remove(type: IttySocketEvent<BaseFormat>, listener: () => any): IttySocket<BaseFormat>
-  remove(type: string, listener: () => any): IttySocket<BaseFormat>
+export type IttySocket<Base = object, Events extends Record<string, any> = {}> = {
+  open: () => IttySocket<Base, Events>
+  close: () => IttySocket<Base, Events>
+  send: SendFn<Base, Events>
+  push: SendFn<Base, Events>
+  remove(type: string, listener: () => any): IttySocket<Base, Events>
 
   // EVENTS
-  on(type: 'open', listener: () => any): IttySocket<BaseFormat>
-  on(type: 'close', listener: () => any): IttySocket<BaseFormat>
-  on<MessageFormat = ExtractMessage<BaseFormat>>(type: 'message', listener: (event: BaseFormat & MessageFormat) => any): IttySocket<BaseFormat>
-  on<MessageFormat = ExtractMessage<BaseFormat>>(type: string, listener: (event: BaseFormat & MessageFormat & { type: string }) => any): IttySocket<BaseFormat>
-  on<MessageFormat = ExtractMessage<BaseFormat>>(type: (event?: any) => any, listener: (event: BaseFormat & MessageFormat & { type: string }) => any): IttySocket<BaseFormat>
-} & (BaseFormat extends IttyProtocol ? IttyProtocolEvents<BaseFormat> : object)
+  on(type: 'open', listener: () => any): IttySocket<Base, Events>
+  on(type: 'close', listener: () => any): IttySocket<Base, Events>
+  on<K extends keyof Events & string>(type: K, listener: (event: Base & Events[K] & { type: K, message: Events[K] }) => any): IttySocket<Base, Events>
+  on<T = any>(type: 'message', listener: (event: Base & { message: T }) => any): IttySocket<Base, Events>
+} & (Base extends IttyProtocol ? IttyEvents<Base, Events> : object)
+  & FallbackEvents<Base, Events>
 
 export let connect: IttySocketConnect = (channelId: string, options = {}) => {
   let ws: WebSocket | null,
@@ -134,12 +138,3 @@ export let connect: IttySocketConnect = (channelId: string, options = {}) => {
 
   return socket
 }
-
-type FooType = { foo: string }
-
-const channel = connect('test')
-
-// this should throw a TS error because of the top-level unknown type
-channel.on('message', ({ foo, uid, message, date }) => {
-  console.log(uid, message, date)
-})
