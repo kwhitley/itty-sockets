@@ -30,12 +30,13 @@ export type IttySocketOptions = {
   announce?: true,
 }
 
-// helper: { type: K } & Events[K] for each key K
+// helper: typed events get { type: K }, 'message' key passes through as-is
 type EventUnion<Events> = {
-  [K in keyof Events & string]: { type: K } & Events[K]
-}[keyof Events & string]
+  [K in Exclude<keyof Events & string, 'message'>]: { type: K } & Events[K]
+}[Exclude<keyof Events & string, 'message'>]
+  | ('message' extends keyof Events ? Events['message' & keyof Events] : never)
 
-type SendFn<Base, Events> = Base extends IttyProtocol
+type SendFn<Base, Events extends Record<string, any>> = Base extends IttyProtocol
   ? keyof Events extends never
     ? <T = any>(message: T, uid?: string) => IttySocket<Base, Events>
     : (message: EventUnion<Events>, uid?: string) => IttySocket<Base, Events>
@@ -51,15 +52,15 @@ export interface IttySocketConnect {
   <Events extends Record<string, any> = {}>(channelID: string, options?: IttySocketOptions): IttySocket<IttyProtocol, Events>
 }
 
-type IttyEvents<Base, Events> = {
+type IttyEvents<Base, Events extends Record<string, any>> = {
   on(type: 'join', listener: (event: JoinEvent) => any): IttySocket<Base, Events>
   on(type: 'leave', listener: (event: LeaveEvent) => any): IttySocket<Base, Events>
   on(type: 'error', listener: (event: ErrorEvent) => any): IttySocket<Base, Events>
 }
 
-type FallbackEvents<Base, Events> = {
-  on<T = {}>(type: string, listener: (event: Base & T & { type: string }) => any): IttySocket<Base, Events>
-  on<T = {}>(type: (event?: any) => any, listener: (event: Base & T & { type: string }) => any): IttySocket<Base, Events>
+type FallbackEvents<Base, Events extends Record<string, any>> = {
+  on<T = Record<string, any>>(type: string, listener: (event: Base & T & { type: string }) => any): IttySocket<Base, Events>
+  on<T = Record<string, any>>(type: (event?: any) => any, listener: (event: Base & T & { type: string }) => any): IttySocket<Base, Events>
 }
 
 export type IttySocket<Base = object, Events extends Record<string, any> = {}> = {
@@ -138,3 +139,27 @@ export let connect: IttySocketConnect = (channelId: string, options = {}) => {
 
   return socket
 }
+
+type MyEvents = {
+  'player-join': { playerId: string, team: string }
+  'player-leave': { playerId: string }
+  'chat': { text: string, user: string }
+  'message': number[] | Record<string, any>
+}
+
+const external = connect<MyEvents>('wss://test')
+  .on('player-join', ({ playerId, team }) => {})
+  .send({ playerId: '123', team: 'Red' })
+  .on('message', (e) => e.message)
+
+const itty = connect<MyEvents>('my-channel')
+  .on('chat', ({ text, user, date, uid }) => {})
+  .on('leave', ({ users }) => {})
+  .send({ type: 'chat', text: 'Hello', user: 'John' })
+  .send([1,2,3])
+
+const raw = connect('my-channel2')
+  .on('chat', ({ text, user, date, uid }) => {})
+  .on('leave', ({ users }) => {})
+  .send({ type: 'chat', text: 'Hello', user: 'John' })
+  .send([1,2,3])
