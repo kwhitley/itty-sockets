@@ -1,5 +1,10 @@
 ## Changelog
 CAUTION: Pre v1.0.0, this should be considered an alpha release, with minor updates allowing for breaking changes to the interface.
+
+#### v0.8.0
+- breaking: changed the generics for connect<EventMap>() - this was likely never used by anyone
+- added: now the types pivot based on wss: string or simple string (IttyProtocol)
+- preserved: .on/.send level generics
 #### v0.7.0
 - added: .on('*', listener) to respond to *any* messages (e.g. normal, custom, join, leave, error, etc)
 #### v0.6.0
