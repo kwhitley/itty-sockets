@@ -27,11 +27,11 @@ type SendFn<Base, Events extends Record<string, any>> =
     : (message: EventUnion<Events>, ...args: Base extends IttyProtocol ? [uid?: string] : []) => IttySocket<Base, Events>
 
 export interface IttySocketConnect {
-  <Events extends Record<string, any> = Record<string, never>>(url: `ws://${string}` | `wss://${string}`, queryParams?: any): IttySocket<object, Events>
-  <Events extends Record<string, any> = Record<string, never>>(channelID: string, options?: IttySocketOptions): IttySocket<IttyProtocol, Events>
+  <Events extends Record<string, any> = {}>(url: `ws://${string}` | `wss://${string}`, queryParams?: any): IttySocket<object, Events>
+  <Events extends Record<string, any> = {}>(channelID: string, options?: IttySocketOptions): IttySocket<IttyProtocol, Events>
 }
 
-export type IttySocket<Base = object, Events extends Record<string, any> = Record<string, never>> = {
+export type IttySocket<Base = object, Events extends Record<string, any> = {}> = {
   open: () => IttySocket<Base, Events>
   close: () => IttySocket<Base, Events>
   send: SendFn<Base, Events>
@@ -114,32 +114,32 @@ export let connect: IttySocketConnect = (channelId: string, options = {}) => {
   return socket
 }
 
-// type MyEvents = {
-//   'player-join': { playerId: string, team: string }
-//   'player-leave': { playerId: string }
-//   'chat': { text: string, user: string }
-//   'message': number[] | Record<string, any>
-// }
+type MyEvents = {
+  'player-join': { playerId: string, team: string }
+  'player-leave': { playerId: string }
+  'chat': { text: string, user: string }
+  'message': number[] | Record<string, any>
+}
 
-// const external = connect<MyEvents>('wss://test')
-//   .on('player-join', ({ playerId, team }) => {})
-//   .send({ playerId: '123', team: 'Red' })
-//   .on('message', (e) => e.message)
+const external = connect<MyEvents>('wss://test')
+  .on('player-join', ({ playerId, team }) => {})
+  .send({ playerId: '123', team: 'Red' })
+  .on('message', (e) => e.message)
 
-// const itty = connect<MyEvents>('my-channel')
-//   .on('chat', ({ text, user, date, uid }) => {})
-//   .on('leave', ({ users }) => {})
-//   .send({ type: 'chat', text: 'Hello', user: 'John' })
-//   .send([1,2,3])
+const itty = connect<MyEvents>('my-channel')
+  .on('chat', ({ text, user, date, uid }) => {})
+  .on('leave', ({ users }) => {})
+  .send({ type: 'chat', text: 'Hello', user: 'John' })
+  .send([1,2,3])
 
-// const raw = connect('my-channel2')
-//   .on('chat', ({ text, user, date, uid }) => {})
-//   .on('leave', ({ users }) => {})
-//   .send({ type: 'chat', text: 'Hello', user: 'John' })
-//   .send([1,2,3])
+const raw = connect('my-channel2')
+  .on('chat', ({ text, user, date, uid }) => {})
+  .on('leave', ({ users }) => {})
+  .send({ type: 'chat', text: 'Hello', user: 'John' })
+  .send([1,2,3])
 
-// const localTypes = connect('my-channel2')
-//   .on<{ type: 'chat', text: string, user: string }>('chat', ({ text, user, date, uid }) => {})
-//   .on('leave', ({ users }) => {})
-//   .send<{ type: 'chat', text: string, user: string }>({ type: 'chat', text: 'Hello', user: 'John' })
-//   .send<number[]>([1,2,3])
+const localTypes = connect('my-channel2')
+  .on<{ type: 'chat', text: string, user: string }>('chat', ({ text, user, date, uid }) => {})
+  .on('leave', ({ users }) => {})
+  .send<{ type: 'chat', text: string, user: string }>({ type: 'chat', text: 'Hello', user: 'John' })
+  .send<number[]>([1,2,3])
