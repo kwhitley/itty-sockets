@@ -26,12 +26,15 @@ type SendFn<Base, Events extends Record<string, any>> =
     ? <T = any>(message: T, ...args: Base extends IttyProtocol ? [uid?: string] : []) => IttySocket<Base, Events>
     : (message: EventUnion<Events>, ...args: Base extends IttyProtocol ? [uid?: string] : []) => IttySocket<Base, Events>
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+type EmptyEvents = {}
+
 export interface IttySocketConnect {
-  <Events extends Record<string, any> = {}>(url: `ws://${string}` | `wss://${string}`, queryParams?: any): IttySocket<object, Events>
-  <Events extends Record<string, any> = {}>(channelID: string, options?: IttySocketOptions): IttySocket<IttyProtocol, Events>
+  <Events extends Record<string, any> = EmptyEvents>(url: `ws://${string}` | `wss://${string}`, queryParams?: any): IttySocket<object, Events>
+  <Events extends Record<string, any> = EmptyEvents>(channelID: string, options?: IttySocketOptions): IttySocket<IttyProtocol, Events>
 }
 
-export type IttySocket<Base = object, Events extends Record<string, any> = {}> = {
+export type IttySocket<Base = object, Events extends Record<string, any> = EmptyEvents> = {
   open: () => IttySocket<Base, Events>
   close: () => IttySocket<Base, Events>
   send: SendFn<Base, Events>

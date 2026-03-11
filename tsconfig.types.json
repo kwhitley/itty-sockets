@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["src/connect.ts", "src/connect.types.test.ts"],
+  "include": ["src/connect.ts", "src/connect.types.spec.ts"],
   "exclude": [],
   "compilerOptions": {
     "noEmit": true

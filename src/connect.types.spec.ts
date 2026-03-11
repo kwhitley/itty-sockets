@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-unused-expressions */
 // Type-level tests for connect()
 // Validated by: tsc --noEmit -p tsconfig.types.json
 // Lines with @ts-expect-error MUST fail - if they don't, tsc errors.
