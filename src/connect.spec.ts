@@ -563,6 +563,12 @@ const runTests = (tests: TestTree) => {
 // run the tests!
 runTests(tests)
 
+// type tests
+it('types', async () => {
+  const result = Bun.spawnSync(['bunx', 'tsc', '-p', 'tsconfig.types.json'])
+  if (result.exitCode) throw new Error(result.stderr.toString())
+})
+
 // close any open channels
 afterAll(() => {
   console.log(`closing ${OPEN_CHANNELS.length} channels`)
