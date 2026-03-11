@@ -42,14 +42,14 @@ export type IttySocket<Base = object, Events extends Record<string, any> = {}> =
   on(type: 'open', listener: () => any): IttySocket<Base, Events>
   on(type: 'close', listener: () => any): IttySocket<Base, Events>
   on<K extends keyof Events & string>(type: K, listener: (event: Base & Events[K] & { type: K, message: Events[K] }) => any): IttySocket<Base, Events>
-  on<T = any>(type: 'message', listener: (event: Base & { message: T }) => any): IttySocket<Base, Events>
+  on<T = any>(type: 'message', listener: (event: Base & T & { message: T }) => any): IttySocket<Base, Events>
 } & (Base extends IttyProtocol ? {
   on(type: 'join', listener: (event: JoinEvent) => any): IttySocket<Base, Events>
   on(type: 'leave', listener: (event: LeaveEvent) => any): IttySocket<Base, Events>
   on(type: 'error', listener: (event: ErrorEvent) => any): IttySocket<Base, Events>
 } : object) & {
-  on<T = Record<string, any>>(type: string, listener: (event: Base & T & { type: string }) => any): IttySocket<Base, Events>
-  on<T = Record<string, any>>(type: (event?: any) => any, listener: (event: Base & T & { type: string }) => any): IttySocket<Base, Events>
+  on<T = Record<string, any>>(type: string, listener: (event: Base & T & { type: string, message: T }) => any): IttySocket<Base, Events>
+  on<T = Record<string, any>>(type: (event?: any) => any, listener: (event: Base & T & { type: string, message: T }) => any): IttySocket<Base, Events>
 }
 
 export let connect: IttySocketConnect = (channelId: string, options = {}) => {
