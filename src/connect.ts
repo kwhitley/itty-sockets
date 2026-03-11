@@ -137,3 +137,9 @@ export let connect: IttySocketConnect = (channelId: string, options = {}) => {
 //   .on('leave', ({ users }) => {})
 //   .send({ type: 'chat', text: 'Hello', user: 'John' })
 //   .send([1,2,3])
+
+// const localTypes = connect('my-channel2')
+//   .on<{ type: 'chat', text: string, user: string }>('chat', ({ text, user, date, uid }) => {})
+//   .on('leave', ({ users }) => {})
+//   .send<{ type: 'chat', text: string, user: string }>({ type: 'chat', text: 'Hello', user: 'John' })
+//   .send<number[]>([1,2,3])
