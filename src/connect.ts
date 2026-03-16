@@ -39,7 +39,7 @@ export type IttySocket<Base = object, Events extends Record<string, any> = Empty
   close: () => IttySocket<Base, Events>
   send: SendFn<Base, Events>
   push: SendFn<Base, Events>
-  remove(type: string, listener: () => any): IttySocket<Base, Events>
+  remove(type: string, listener: (...args: any[]) => any): IttySocket<Base, Events>
 
   // EVENTS
   on(type: 'open', listener: () => any): IttySocket<Base, Events>
@@ -50,10 +50,12 @@ export type IttySocket<Base = object, Events extends Record<string, any> = Empty
   on(type: 'join', listener: (event: JoinEvent) => any): IttySocket<Base, Events>
   on(type: 'leave', listener: (event: LeaveEvent) => any): IttySocket<Base, Events>
   on(type: 'error', listener: (event: ErrorEvent) => any): IttySocket<Base, Events>
-} : object) & {
-  on<T = Record<string, any>>(type: string, listener: (event: Base & T & { type: string, message: T }) => any): IttySocket<Base, Events>
+  on<T = Record<string, any>, K extends string = string>(type: K extends 'open' | 'close' | 'message' | 'join' | 'leave' | 'error' | keyof Events ? never : K, listener: (event: Base & T & { type: string, message: T }) => any): IttySocket<Base, Events>
   on<T = Record<string, any>>(type: (event?: any) => any, listener: (event: Base & T & { type: string, message: T }) => any): IttySocket<Base, Events>
-}
+} : {
+  on<T = Record<string, any>, K extends string = string>(type: K extends 'open' | 'close' | 'message' | keyof Events ? never : K, listener: (event: Base & T & { type: string, message: T }) => any): IttySocket<Base, Events>
+  on<T = Record<string, any>>(type: (event?: any) => any, listener: (event: Base & T & { type: string, message: T }) => any): IttySocket<Base, Events>
+})
 
 export let connect: IttySocketConnect = (channelId: string, options = {}) => {
   let ws: WebSocket | null,
@@ -105,7 +107,7 @@ export let connect: IttySocketConnect = (channelId: string, options = {}) => {
       (events[type?.[0] ? type : '*'] ??= []).push(type?.[0] ? listener : (e: any) => type?.(e) && listener(e)),
       open()
     ),
-    remove: (type: any, listener: () => any) => (
+    remove: (type: any, listener: (...args: any[]) => any) => (
       events[type] = events[type]?.filter((l: any) => l != listener),
       socket
     ),

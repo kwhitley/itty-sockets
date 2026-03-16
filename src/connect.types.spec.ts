@@ -86,6 +86,24 @@ raw.on((e: any) => e.foo, (e) => {
 // remove
 raw.remove('chat', () => {})
 
+// remove with typed join/leave listeners
+const joinListener = (e: import('./connect').JoinEvent) => { e.users }
+const leaveListener = (e: import('./connect').LeaveEvent) => { e.users }
+raw.on('join', joinListener).remove('join', joinListener)
+raw.on('leave', leaveListener).remove('leave', leaveListener)
+
+// join/leave events should reject unknown properties
+// @ts-expect-error - text does not exist on JoinEvent
+raw.on('join', ({ text }) => {})
+// @ts-expect-error - text does not exist on LeaveEvent
+raw.on('leave', ({ text }) => {})
+
+// join/leave listeners must match their event signature
+// @ts-expect-error - foo does not exist on JoinEvent
+raw.on('join', ({ type, foo }: { type: 'join', foo: string }) => {})
+// @ts-expect-error - foo does not exist on LeaveEvent
+raw.on('leave', ({ type, foo }: { type: 'leave', foo: string }) => {})
+
 // uid param on send (itty protocol)
 raw.send('hello', 'some-uid')
 raw.push('hello', 'some-uid')

@@ -1,7 +1,9 @@
 ## Changelog
 CAUTION: Pre v1.0.0, this should be considered an alpha release, with minor updates allowing for breaking changes to the interface.
 
-
+#### v0.8.2
+- fixed: TS should be strict for join/leave events when using IttyProtocol
+- fixed: remove should be loosely typed to allow any function removal
 #### v0.8.1
 - fixed: .send<MessageType>() types were incorrect - this has been restored
 - added: full type coverage to protect during future refactors
