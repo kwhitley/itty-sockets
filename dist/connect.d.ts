@@ -15,11 +15,17 @@ export type MessageEvent<T = any> = {
 } & EventBase;
 export type JoinEvent = {
     type: 'join';
-    users: number;
+    total: number;
+    self?: boolean;
+    users?: {
+        uid: string;
+        alias?: string;
+        self?: boolean;
+    }[];
 } & EventBase;
 export type LeaveEvent = {
     type: 'leave';
-    users: number;
+    total: number;
 } & EventBase;
 export type ErrorEvent = {
     type: 'error';
@@ -30,6 +36,7 @@ export type IttySocketOptions = {
     alias?: string;
     echo?: true;
     announce?: true;
+    list?: true;
 };
 type EventUnion<Events> = {
     [K in Exclude<keyof Events & string, 'message'>]: {
