@@ -1,6 +1,12 @@
 ## Changelog
 CAUTION: Pre v1.0.0, this should be considered an alpha release, with minor updates allowing for breaking changes to the interface.
 
+#### v0.9.0
+- breaking: join.users is now an array of users (previously number of users), only sent when connecting with { list: true }
+- breaking: join.total is the total user count (previously join.users)
+- added: join.self flag is true to self-identify
+- added: join.uid + join.alias is sent on self-identity message (regardless of announce)
+- join.users list only includes self-announcing users, with self.true flag for own entry
 #### v0.8.2
 - fixed: TS should be strict for join/leave events when using IttyProtocol
 - fixed: remove should be loosely typed to allow any function removal
