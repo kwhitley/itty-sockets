@@ -18,7 +18,7 @@
 
 ---
 
-## Zero-Config WebSockets.
+# Zero-Config WebSockets.
 
 No accounts, no API keys, nothing to deploy. Just connect and start sending.
 
@@ -29,8 +29,9 @@ No accounts, no API keys, nothing to deploy. Just connect and start sending.
 - **Zero Cost** - No tiers. No credit card. Built for the community.
 - **Private by Default** - No logging, no tracking, no storage. Messages are relayed and forgotten.
 - **Send Anything** - Strings, objects, arrays — anything JSON-serializable.
-- **Tiny Client** - ~466 bytes gzipped with JSON-in/out, message queuing, reconnect, type-safe routing, and a fully chainable API.
-- **Access Control** - Reserve a namespace to control who can join or send on your channels — no backend required.
+- **Access Control** - [Reserve a namespace](https://ittysockets.com/reservations) to control who can join or send on your channels.
+- **Use Anywhere** - No vendor lock. This client works with *any* WebSocket server.  Want to host your own?  No problem.
+- **Tiny Client** - Only 466 bytes gzipped.
 
 ## Quick Start
 ```ts
@@ -57,28 +58,6 @@ alice.on('message', ({ message, alias }) =>
 
 bob.send('hey Alice!')
 // → "Bob: hey Alice!"
-```
-
-## Access Control
-Reserve a namespace to protect your channels with join and send keys — all managed from your [dashboard](https://itty.ws/reservations).
-```ts
-import { connect } from 'itty-sockets'
-
-// namespace-protected channel
-connect('myapp:notifications', {
-  joinKey: 'your-join-key',
-  sendKey: 'your-send-key',
-})
-```
-
-## Installation
-
-```bash
-npm install itty-sockets
-```
-
-```ts
-import { connect } from 'itty-sockets'
 ```
 
 ## API at a Glance
