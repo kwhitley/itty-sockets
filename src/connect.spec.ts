@@ -177,7 +177,7 @@ const tests: TestTree = {
               resolve()
             })
             .send({ foo: 'bar' }),
-        'message props do not override event base props': async ({ getChannel, resolve }, date = new Date()) =>
+        'message props do not override event base props': async ({ getChannel, resolve }) =>
           getChannel({ echo: true, alias: 'test-user' })
             .on<{ foo: string }>('message', (e) => {
               expect(e.foo).toBe('bar')
@@ -188,10 +188,10 @@ const tests: TestTree = {
               // confirm props are not overridden
               expect(e.uid).not.toBe('foo')
               expect(e.alias).not.toBe('bar')
-              expect(e.date).not.toBe(+date)
+              expect(e.date).not.toBe(12345)
               resolve()
             })
-            .send({ foo: 'bar', uid: 'foo', alias: 'bar', date }),
+            .send({ foo: 'bar', uid: 'foo', alias: 'bar', date: 12345 }),
         'base props not polluted by string messages': async ({ getChannel, resolve, spy }) =>
           getChannel({ echo: true })
             .on('message', spy)
@@ -224,13 +224,14 @@ const tests: TestTree = {
         'registers an event listener that is called when a user (or self) joins the channel': async ({ channel, resolve }) =>
           channel
             .on('join', e => {
-              expect(e.users).toBe(1)
+              expect(e.total).toBe(1)
               resolve()
             }),
-        'does NOT include user details when { announce: true } is not set': async ({ channel, resolve }) =>
+        'self join always includes uid': async ({ channel, resolve }) =>
           channel
             .on('join', e => {
-              expect(e.uid).toBeUndefined()
+              expect(e.self).toBe(true)
+              expect(e.uid).toBeTypeOf('string')
               expect(e.alias).toBeUndefined()
               resolve()
             }),
@@ -255,7 +256,7 @@ const tests: TestTree = {
         'registers an event listener that is called when a user leaves the channel': async ({ channel, getChannel,resolve }) => {
             channel
               .on('leave', e => {
-                expect(e.users).toBe(1)
+                expect(e.total).toBe(1)
                 resolve()
               })
               .on('open', () => {
@@ -376,14 +377,15 @@ const tests: TestTree = {
         },
         'delivers a message to a recipient': async ({ channel, getChannel, resolve }) => {
           channel
-            .on('join', ({ uid }) => {
-              channel.send('test', uid)
+            .on('join', ({ uid, self }) => {
+              if (!self) channel.send('test', uid)
             })
-
-          getChannel({ announce: true })
-            .on('message', (e) => {
-              expect(e.message).toBe('test')
-              resolve()
+            .on('open', () => {
+              getChannel({ announce: true })
+                .on('message', (e) => {
+                  expect(e.message).toBe('test')
+                  resolve()
+                })
             })
         },
         'private messages are ONLY delivered to the recipient': async ({ channel, getChannel, resolve, spy }) =>
@@ -457,8 +459,9 @@ const tests: TestTree = {
         'default': async ({ channel, resolve }) =>
           channel
             .on('join', e => {
-              expect(e.users).toBe(1)
-              expect(e.uid).toBeUndefined()
+              expect(e.total).toBe(1)
+              expect(e.self).toBe(true)
+              expect(e.uid).toBeTypeOf('string')
               expect(e.alias).toBeUndefined()
               expect(e.date).toBeTypeOf('number')
               resolve()
@@ -466,7 +469,7 @@ const tests: TestTree = {
         'with { announce: true }': async ({ getChannel, resolve }) =>
           getChannel({ announce: true, as: 'test-user' })
             .on('join', e => {
-              expect(e.users).toBe(1)
+              expect(e.total).toBe(1)
               expect(e.uid).toBeTypeOf('string')
               expect(e.alias).toBe('test-user')
               expect(e.date).toBeTypeOf('number')
@@ -477,7 +480,7 @@ const tests: TestTree = {
         'default': async ({ channel, getChannel, resolve }) => {
           channel
             .on('leave', e => {
-              expect(e.users).toBe(1)
+              expect(e.total).toBe(1)
               expect(e.uid).toBeUndefined()
               expect(e.alias).toBeUndefined()
               expect(e.date).toBeTypeOf('number')
@@ -490,7 +493,7 @@ const tests: TestTree = {
         'with { announce: true }': async ({ getChannel, resolve }) => {
           getChannel()
             .on('leave', e => {
-              expect(e.users).toBe(1)
+              expect(e.total).toBe(1)
               expect(e.uid).toBeTypeOf('string')
               expect(e.alias).toBe('test-user')
               expect(e.date).toBeTypeOf('number')
@@ -528,8 +531,11 @@ const tests: TestTree = {
 }
 
 // setup function for each test
+const WS_URL = process.env.WS_URL // e.g. ws://localhost:2222/c/
+
 const setup = () => {
-  const id = 'itty:itty-sockets:test-' + Math.random().toString(36).slice(2)
+  const room = 'itty:itty-sockets:test-' + Math.random().toString(36).slice(2)
+  const id = WS_URL ? WS_URL + room : room
   const getChannel = (options = {}): IttySocket<IttyProtocol> => {
     const channel = connect(id, options)
     OPEN_CHANNELS.push(channel)
@@ -538,7 +544,7 @@ const setup = () => {
 
   return {
     getChannel,
-    channel: getChannel(id) as IttySocket<IttyProtocol>,
+    channel: getChannel() as IttySocket<IttyProtocol>,
     spy: mock(() => {}),
   }
 }

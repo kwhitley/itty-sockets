@@ -38,7 +38,7 @@ raw.send<{ type: 'chat', text: string }>({ type: 'chat', text: 1 })
 // chaining works through .on and .send
 connect('my-channel')
   .on('chat', ({ text, user, date, uid }) => {})
-  .on('leave', ({ users }) => {})
+  .on('leave', ({ total }) => {})
   .send({ type: 'chat', text: 'Hello', user: 'John' })
   .send([1, 2, 3])
 
@@ -54,11 +54,11 @@ raw.push('hello')
 
 // itty protocol events available on channel connections
 raw.on('join', (e) => {
-  const _users: number = e.users
+  const _total: number = e.total
   const _type: 'join' = e.type
 })
 raw.on('leave', (e) => {
-  const _users: number = e.users
+  const _total: number = e.total
   const _type: 'leave' = e.type
 })
 raw.on('error', (e) => {
@@ -87,8 +87,8 @@ raw.on((e: any) => e.foo, (e) => {
 raw.remove('chat', () => {})
 
 // remove with typed join/leave listeners
-const joinListener = (e: import('./connect').JoinEvent) => { e.users }
-const leaveListener = (e: import('./connect').LeaveEvent) => { e.users }
+const joinListener = (e: import('./connect').JoinEvent) => { e.total }
+const leaveListener = (e: import('./connect').LeaveEvent) => { e.total }
 raw.on('join', joinListener).remove('join', joinListener)
 raw.on('leave', leaveListener).remove('leave', leaveListener)
 
@@ -151,11 +151,11 @@ typed.on('message', (e) => {
 
 // itty protocol events still available on typed connections
 typed.on('join', (e) => {
-  const _users: number = e.users
+  const _total: number = e.total
   const _type: 'join' = e.type
 })
 typed.on('leave', (e) => {
-  const _users: number = e.users
+  const _total: number = e.total
 })
 typed.on('error', (e) => {
   const _message: string = e.message

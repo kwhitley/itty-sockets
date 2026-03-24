@@ -4,8 +4,8 @@ type EventBase = Timestamp & { uid?: string, alias?: string }
 
 export type IttyProtocol = UserDetails & Timestamp
 export type MessageEvent<T = any> = { message: T } & EventBase
-export type JoinEvent = { type: 'join', users: number } & EventBase
-export type LeaveEvent = { type: 'leave', users: number } & EventBase
+export type JoinEvent = { type: 'join', total: number, self?: boolean, users?: { uid: string, alias?: string, self?: boolean }[] } & EventBase
+export type LeaveEvent = { type: 'leave', total: number } & EventBase
 export type ErrorEvent = { type: 'error', message: string } & Timestamp
 
 export type IttySocketOptions = {
@@ -13,6 +13,7 @@ export type IttySocketOptions = {
   alias?: string,
   echo?: true,
   announce?: true,
+  list?: true,
 }
 
 // typed events get { type: K }, 'message' key passes through as-is

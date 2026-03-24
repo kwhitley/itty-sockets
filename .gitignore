@@ -5,4 +5,5 @@
 CLAUDE.md
 node_modules
 coverage
-dist
+dist.env.local
+.env
