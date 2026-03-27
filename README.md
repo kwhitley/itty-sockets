@@ -22,7 +22,17 @@
 
 No accounts, no API keys, nothing to deploy. Just connect and start sending.
 
-**~466 bytes** min+gzip &bull; **$0/month** &bull; **Free forever**
+### **~466 bytes** &bull; **free forever**
+
+<br />
+
+> After working in realtime for quite a few years, I wanted something absolutely frictionless for prototyping.  Spinning up socket servers or authenticating to services like Pusher/Ably involves overhead every time... so I built a service for myself (and everyone else).  Then I designed this super-tiny WebSocket client that made even *that* side really easy to work with.
+>
+> Welcome to `itty-sockets`!
+>
+> ~ Kevin W
+
+<br />
 
 ## Features
 - **Zero Configuration** - No accounts, no API keys, no server. Pick a channel name and you're live.
@@ -32,6 +42,8 @@ No accounts, no API keys, nothing to deploy. Just connect and start sending.
 - **Access Control** - [Reserve a namespace](https://ittysockets.com/reservations) to control who can join or send on your channels.
 - **Use Anywhere** - No vendor lock. This client works with *any* WebSocket server.  Want to host your own?  No problem.
 - **Tiny Client** - Only 466 bytes gzipped.
+
+<br />
 
 ## Quick Start
 ```ts
@@ -43,6 +55,8 @@ connect('my-channel')
   .send([1, 2, 3])       // arrays
   .send({ foo: 'bar' })  // objects
 ```
+
+<br />
 
 ## Chat Example
 ```ts
@@ -60,6 +74,8 @@ bob.send('hey Alice!')
 // → "Bob: hey Alice!"
 ```
 
+<br />
+
 ## API at a Glance
 
 | Method | Description |
@@ -73,4 +89,6 @@ bob.send('hey Alice!')
 | `.close()` | Disconnect |
 | `.remove(type, listener)` | Remove a listener |
 
-## See the [full documentation](https://itty.ws/docs) for more!
+<br />
+
+## See the [full documentation](https://ittysockets.com/docs).
