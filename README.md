@@ -14,7 +14,7 @@
 [![Issues](https://img.shields.io/github/issues/kwhitley/itty-sockets?style=flat-square)](https://github.com/kwhitley/itty-sockets/issues)
 [![Discord](https://img.shields.io/discord/832353585802903572?label=Discord&logo=Discord&style=flat-square&logoColor=fff)](https://discord.gg/53vyrZAu9u)
 
-### [Full Documentation](https://itty.ws/docs) &nbsp;| &nbsp; [Discord](https://discord.gg/53vyrZAu9u)
+### [Full Documentation](https://ittysockets.com/docs) &nbsp;| &nbsp; [Discord](https://discord.gg/53vyrZAu9u)
 
 ---
 
