@@ -26,11 +26,9 @@ No accounts, no API keys, nothing to deploy. Just connect and start sending.
 
 <br />
 
-> After working in realtime for quite a few years, I wanted something absolutely frictionless for prototyping.  Spinning up socket servers or authenticating to services like Pusher/Ably involves overhead every time... so I built a service for myself (and everyone else).  Then I designed this super-tiny WebSocket client that made even *that* side really easy to work with.
+> After building realtime apps for years, I wanted something absolutely frictionless for prototyping.  Spinning up socket servers or authenticating to services like Pusher/Ably involves overhead every time... so I built a service for myself (and everyone else).  Then I designed this super-tiny WebSocket client that made even *that* side really easy to work with.
 >
 > Welcome to `itty-sockets`!
->
-> ~ Kevin W
 
 <br />
 
