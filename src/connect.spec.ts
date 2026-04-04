@@ -532,6 +532,7 @@ const tests: TestTree = {
 
 // setup function for each test
 const WS_URL = process.env.WS_URL // e.g. ws://localhost:2222/c/
+if (WS_URL) console.warn(`\n⚠ WS_URL is set — running tests against ${WS_URL}\n`)
 
 const setup = () => {
   const room = 'itty:itty-sockets:test-' + Math.random().toString(36).slice(2)

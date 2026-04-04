@@ -33,46 +33,57 @@ No accounts, no API keys, nothing to deploy. Just connect and start sending.
 <br />
 
 ## Features
-- **Zero Configuration** - No accounts, no API keys, no server. Pick a channel name and you're live.
-- **Zero Cost** - No tiers. No credit card. Built for the community.
-- **Private by Default** - No logging, no tracking, no storage. Messages are relayed and forgotten.
-- **Send Anything** - Strings, objects, arrays — anything JSON-serializable.
+- **Zero Config/Cost** - No accounts, no API keys, no server. Pick a channel name and you're live.
+- **Private** - No logging, no tracking, no storage. Messages are relayed and forgotten.
+- **Flexible** - Send any JSON-serializable data/shape.
 - **Access Control** - [Reserve a namespace](https://ittysockets.com/reservations) to control who can join or send on your channels.
 - **Use Anywhere** - No vendor lock. This client works with *any* WebSocket server.  Want to host your own?  No problem.
 - **Tiny Client** - Only 466 bytes gzipped.
 
 <br />
 
-## Quick Start
+## Chat Example
 ```ts
 import { connect } from 'itty-sockets' // ~466 bytes
 
-connect('my-channel')
-  .on('message', ({ message }) => console.log(message))
-  .send('hello world')   // strings
-  .send([1, 2, 3])       // arrays
-  .send({ foo: 'bar' })  // objects
+// connect to a room
+const bob = connect('my-secret-chat-room', { as: 'Bob' })
+
+bob
+  .send('hey Alice!')
+  .send([1, 2, 3])
+  .send({ foo: 'bar' })
 ```
 
-<br />
+meanwhile, elsewhere...
 
-## Chat Example
 ```ts
-import { connect } from 'itty-sockets'
+// connect to the same room as above, and listen for messages
+const alice = connect('my-secret-chat-room', { as: 'Alice' })
+  .on('message', ({ message, alias }) =>
+    console.log(`${alias}: ${message}`)
+  )
 
-// two users, same channel
-const alice = connect('chat-room', { as: 'Alice' })
-const bob   = connect('chat-room', { as: 'Bob' })
-
-alice.on('message', ({ message, alias }) =>
-  console.log(`${alias}: ${message}`)
-)
-
-bob.send('hey Alice!')
 // → "Bob: hey Alice!"
+// → "Bob: [1, 2, 3]"
+// → "Bob: { foo: 'bar' }"
 ```
 
 <br />
+
+## Installation
+
+```bash
+npm install itty-sockets
+```
+
+Or just paste the following snippet (loses TypeScript support):
+<!-- BEGIN SNIPPET -->
+```ts
+let connect=(e,s={})=>{let a,t,n=[],p={},o=()=>(a||(a=new WebSocket((/^wss?:/.test(e)?e:"wss://itty.ws/c/"+e)+"?"+new URLSearchParams(s)),a.onmessage=(e,s=JSON.parse(e.data),a=s?.message,t={...null==a?.[0]&&a,...s})=>[t.type,s.type?0:"message","*"].map(e=>p[e]?.map(e=>e(t))),a.onopen=()=>(n.splice(0).map(e=>a.send(e)),p.open?.map(e=>e(t)),t&&a?.close()),a.onclose=()=>(t=a=null,p.close?.map(e=>e(t)))),l),l={open:o,send:(e,s)=>(e=(s?`${s}`:"")+JSON.stringify(e),1&a?.readyState?a.send(e):n.push(e),o()),on:(e,s)=>((p[e?.[0]?e:"*"]??=[]).push(e?.[0]?s:a=>e?.(a)&&s(a)),o()),remove:(e,s)=>(p[e]=p[e]?.filter(e=>e!=s),l),close:()=>(1&a?.readyState?a.close():t=1,l),push:(e,s)=>(t=1,l.send(e,s))};return l};
+```
+<!-- END SNIPPET -->
+
 
 ## API at a Glance
 
@@ -82,7 +93,7 @@ bob.send('hey Alice!')
 | `.on(type, listener)` | Listen for events (`'message'`, `'join'`, `'leave'`, `'open'`, `'close'`, `'error'`, custom types, or `'*'`) |
 | `.on(filterFn, listener)` | Listen with a custom filter function |
 | `.send(message, uid?)` | Send a message (optionally to a specific user) |
-| `.push(message, uid?)` | Send a message and disconnect |
+| `.push(message, uid?)` | Send a message and disconnect afterwards |
 | `.open()` | (Re)connect — safe to call anytime, listeners are preserved |
 | `.close()` | Disconnect |
 | `.remove(type, listener)` | Remove a listener |
