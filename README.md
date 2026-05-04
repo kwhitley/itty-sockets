@@ -57,7 +57,7 @@ bob.send({
 | Account / API key | required | N/A (self-host) | **none** | 
 | Server to run | **none (hosted)** | yes | **none (hosted)** |
 | Free tier | limited | N/A | **[it's _all_ free](https://ittysockets.com/pricing)** | 
-| Client size | ~30–50kB | ~40kB | **466B** | 
+| Client size | ~30–50kB | ~40kB | **466 bytes** | 
 | Logging / data retention | yes | up to you | none |
 
 <br />
