@@ -22,52 +22,43 @@
 
 No accounts, no API keys, nothing to deploy. Just connect and start sending.
 
-### **~466 bytes** &bull; **free forever**
-
-<br />
-
-> After building realtime apps for years, I wanted something absolutely frictionless for prototyping.  Spinning up socket servers or authenticating to services like Pusher/Ably involves overhead every time... so I built a service for myself (and everyone else).  Then I designed this super-tiny WebSocket client that made even *that* side really easy to work with.
->
-> Welcome to `itty-sockets`!
-
-<br />
-
-## Features
-- **Zero Config/Cost** - No accounts, no API keys, no server. Pick a channel name and you're live.
-- **Private** - No logging, no tracking, no storage. Messages are relayed and forgotten.
-- **Flexible** - Send any JSON-serializable data/shape.
-- **Access Control** - [Reserve a namespace](https://ittysockets.com/reservations) to control who can join or send on your channels.
-- **Use Anywhere** - No vendor lock. This client works with *any* WebSocket server.  Want to host your own?  No problem.
-- **Tiny Client** - Only 466 bytes gzipped.
-
-<br />
 
 ## Chat Example
 ```ts
 import { connect } from 'itty-sockets' // ~466 bytes
 
-// connect to a room
-const bob = connect('my-secret-chat-room', { as: 'Bob' })
-
-bob
-  .send('hey Alice!')
-  .send([1, 2, 3])
-  .send({ foo: 'bar' })
+// Alice joins a room and listens
+connect('chat-room', { as: 'Alice' })
+  .on('message', ({ alias, text, mood }) =>
+    console.log(`${alias} (${mood}): ${text}`)
+  )
 ```
 
 meanwhile, elsewhere...
 
 ```ts
-// connect to the same room as above, and listen for messages
-const alice = connect('my-secret-chat-room', { as: 'Alice' })
-  .on('message', ({ message, alias }) =>
-    console.log(`${alias}: ${message}`)
-  )
+// Bob joins the same room and sends a message
+const bob = connect('chat-room', { as: 'Bob' })
 
-// → "Bob: hey Alice!"
-// → "Bob: [1, 2, 3]"
-// → "Bob: { foo: 'bar' }"
+bob.send({
+  text: 'hey Alice!',
+  mood: 'excited',
+})
+
+// Alice's console: → "Bob (excited): hey Alice!"
 ```
+
+<br />
+
+## Comparison
+| | Pusher / Ably | Socket.IO | itty-sockets |
+| --- | --- | --- | --- |
+| Time to first message| sign up → key → SDK → connect | deploy server → SDK → connect | **`connect('foo').send(...)`** |
+| Account / API key | required | N/A (self-host) | **none** | 
+| Server to run | **none (hosted)** | yes | **none (hosted)** |
+| Free tier | limited | N/A | **[it's _all_ free](https://ittysockets.com/pricing)** | 
+| Client size | ~30–50kB | ~40kB | **466B** | 
+| Logging / data retention | yes | up to you | none |
 
 <br />
 
@@ -84,6 +75,7 @@ let connect=(e,s={})=>{let a,t,n=[],p={},o=()=>(a||(a=new WebSocket((/^wss?:/.te
 ```
 <!-- END SNIPPET -->
 
+<br />
 
 ## API at a Glance
 
